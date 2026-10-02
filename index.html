@@ -251,6 +251,8 @@ F<!DOCTYPE html>
       <p class="info">
         Consulte seus aspiradores VORTEX e o status de cada equipamento.
       </p>
+      
+      <div id="listaEquipamentosPagina"></div>
     </div>
   </div>
 
@@ -517,6 +519,12 @@ document.getElementById("contaTelefone").innerText =
         '<div class="message">Nenhum equipamento cadastrado.</div>';
       return;
     }
+    
+    const listaPagina = document.getElementById("listaEquipamentosPagina");
+
+if (listaPagina) {
+  listaPagina.innerHTML = "";
+}
 
     equipamentos.forEach(e => {
 
@@ -546,6 +554,29 @@ document.getElementById("contaTelefone").innerText =
 
         </div>
       `;
+      if (listaPagina) {
+  listaPagina.innerHTML += `
+    <div class="equipment">
+
+      <strong>
+        ${e.nome || "Aspirador VORTEX"}
+      </strong>
+
+      <div>
+        Código: ${e.codigo}
+      </div>
+
+      <div>
+        Valor: R$ ${Number(e.preco_minuto).toFixed(2)} / minuto
+      </div>
+
+      <div class="${classe}">
+        ${e.status === "online" ? "● ONLINE" : "● OFFLINE"}
+      </div>
+
+    </div>
+  `;
+}
     });
   }
 
