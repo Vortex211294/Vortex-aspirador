@@ -1,7 +1,7 @@
-<!DOCTYPE html>
+F<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8">FFF
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#050914">
   <title>VORTEX ASPIRADOR</title>
@@ -365,6 +365,14 @@
 
     document.getElementById("nomeCliente").innerText =
       cliente.nome || authData.user.email;
+    document.getElementById("contaNome").innerText =
+  cliente.nome || "-";
+
+document.getElementById("contaEmail").innerText =
+  authData.user.email || "-";
+
+document.getElementById("contaTelefone").innerText =
+  cliente.telefone || "-";
 
     const { data: equipamentos, error } =
       await db
@@ -428,6 +436,8 @@
     } = await db.auth.getSession();
 
     if (session) {
+
+
   abrirPainel();
     }
   }
