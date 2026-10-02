@@ -396,4 +396,41 @@
         <div class="equipment">
 
           <strong>
-           
+           ${e.nome || "Aspirador VORTEX"}
+          </strong>
+
+          <div>
+            Código: ${e.codigo}
+          </div>
+
+          <div>
+            Valor: R$ ${Number(e.preco_minuto).toFixed(2)} / minuto
+          </div>
+
+          <div class="${classe}">
+            ${e.status === "online" ? "● ONLINE" : "● OFFLINE"}
+          </div>
+
+        </div>
+      `;
+    });
+  }
+
+  // Verifica se o usuário já está conectado ao abrir o site
+  async function verificarSessao() {
+
+    const {
+      data: { session }
+    } = await db.auth.getSession();
+
+    if (session) {
+      carregarPainel();
+    }
+  }
+
+  verificarSessao();
+
+</script>
+
+</body>
+</html>
