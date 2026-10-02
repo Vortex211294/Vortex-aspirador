@@ -747,7 +747,10 @@ if (listaPagina) {
 }
     });
   }
-
+async function sair() {
+  await db.auth.signOut();
+  location.reload();
+}
   // Verifica se o usuário já está conectado ao abrir o site
   async function verificarSessao() {
 
