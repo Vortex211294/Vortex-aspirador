@@ -220,25 +220,133 @@ F<!DOCTYPE html>
     <div id="cadastroMsg" class="message"></div>
   </div>
 
-  <!-- PAINEL -->
+  <!-- PAINEL NOVO VORTEX -->
 
-  <div id="painel" class="hidden">
+<div id="painel" class="hidden">
 
-    <div class="topbar">
-      <div>
-        <strong>Meu VORTEX</strong>
-        <div id="nomeCliente" class="info"></div>
-      </div>
-
-      <button onclick="sair()">Sair</button>
+  <div class="topbar">
+    <div>
+      <strong>Meu VORTEX</strong>
+      <div id="nomeCliente" class="info"></div>
     </div>
 
+    <button onclick="sair()">Sair</button>
+  </div>
+
+  <!-- INÍCIO -->
+  <div id="paginaInicio" class="paginaVortex">
     <div class="card">
       <div class="info">Mensalidade</div>
       <div class="value">R$ 50,00</div>
 
+      <h3>Meus equipamentos</h3>
       <div id="listaEquipamentos"></div>
     </div>
+  </div>
+
+  <!-- EQUIPAMENTOS -->
+  <div id="paginaEquipamentos" class="paginaVortex hidden">
+    <div class="card">
+      <h2>Equipamentos</h2>
+      <p class="info">
+        Consulte seus aspiradores VORTEX e o status de cada equipamento.
+      </p>
+    </div>
+  </div>
+
+  <!-- FATURAMENTO -->
+  <div id="paginaFaturamento" class="paginaVortex hidden">
+    <div class="card">
+      <h2>Faturamento</h2>
+      <p class="info">Acompanhe o faturamento dos seus equipamentos.</p>
+    </div>
+  </div>
+
+  <!-- SESSÕES -->
+  <div id="paginaSessoes" class="paginaVortex hidden">
+    <div class="card">
+      <h2>Sessões</h2>
+      <p class="info">Histórico de utilizações dos equipamentos.</p>
+    </div>
+  </div>
+
+  <!-- PIX -->
+  <div id="paginaPix" class="paginaVortex hidden">
+    <div class="card">
+      <h2>PIX</h2>
+      <p class="info">Acompanhe os pagamentos recebidos via PIX.</p>
+    </div>
+  </div>
+
+  <!-- MENSALIDADE -->
+  <div id="paginaMensalidade" class="paginaVortex hidden">
+    <div class="card">
+      <h2>Mensalidade</h2>
+      <div class="value">R$ 50,00</div>
+      <p class="info">Plano mensal VORTEX ASPIRADOR.</p>
+    </div>
+  </div>
+
+  <!-- MINHA CONTA -->
+  <div id="paginaConta" class="paginaVortex hidden">
+    <div class="card">
+      <h2>Minha Conta</h2>
+
+      <p class="info">Nome</p>
+      <strong id="contaNome">-</strong>
+
+      <p class="info">E-mail</p>
+      <strong id="contaEmail">-</strong>
+
+      <p class="info">Telefone</p>
+      <strong id="contaTelefone">-</strong>
+    </div>
+  </div>
+
+  <!-- SUPORTE -->
+  <div id="paginaSuporte" class="paginaVortex hidden">
+    <div class="card">
+      <h2>Suporte</h2>
+      <p class="info">
+        Central de suporte VORTEX ASPIRADOR.
+      </p>
+    </div>
+  </div>
+
+  <!-- MENU -->
+  <div class="menuVortex">
+
+    <button type="button" onclick="abrirPagina('Inicio')">
+      Início
+    </button>
+
+    <button type="button" onclick="abrirPagina('Equipamentos')">
+      Equipamentos
+    </button>
+
+    <button type="button" onclick="abrirPagina('Faturamento')">
+      Faturamento
+    </button>
+
+    <button type="button" onclick="abrirPagina('Sessoes')">
+      Sessões
+    </button>
+
+    <button type="button" onclick="abrirPagina('Pix')">
+      PIX
+    </button>
+
+    <button type="button" onclick="abrirPagina('Mensalidade')">
+      Mensalidade
+    </button>
+
+    <button type="button" onclick="abrirPagina('Conta')">
+      Conta
+    </button>
+
+    <button type="button" onclick="abrirPagina('Suporte')">
+      Suporte
+    </button>
 
   </div>
 
@@ -254,7 +362,20 @@ F<!DOCTYPE html>
   const db = supabase.createClient(
     SUPABASE_URL,
     SUPABASE_KEY
-  );
+  ); 
+  function abrirPagina(pagina) {
+    const paginas = document.querySelectorAll(".paginaVortex");
+
+    paginas.forEach(p => {
+      p.classList.add("hidden");
+    });
+
+    const destino = document.getElementById("pagina" + pagina);
+
+    if (destino) {
+      destino.classList.remove("hidden");
+    }
+  }
 
   function mostrarCadastro() {
     document.getElementById("loginBox").classList.add("hidden");
