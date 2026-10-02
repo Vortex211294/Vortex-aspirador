@@ -548,7 +548,9 @@ if (listaPix) {
 
     totalPix += valor;
     
-    if (listaPix) {
+    if (listaPix)
+    {console.log("PIX ENCONTRADO:", p);
+     
   const comissao = Number(p.comissao_valor) || 0;
   const valorCliente = Number(p.valor_cliente) || 0;
   const percentual = Number(p.comissao_percentual) || 0;
