@@ -519,8 +519,81 @@ document.getElementById("contaTelefone").innerText =
     const { data: equipamentos, error } =
       await db
         .from("equipamentos")
-        .select("codigo,nome,preco_minuto,status")
+        .select("id,codigo,nome,preco_minuto,status")
         .eq("cliente_id", cliente.id);
+    
+    const { data: pagamentos, error: pagamentosErro } =
+  await db
+    .from("pagamentos")
+    .select("valor_bruto,valor_cliente,status,criado_em,pago_em")
+    .eq("cliente_id", cliente.id)
+    .eq("status", "PAID");
+    
+    if (!pagamentosErro && pagamentos) {
+  const agora = new Date();
+
+  let faturamentoHoje = 0;
+  let faturamentoMes = 0;
+  let totalPix = 0;
+
+  pagamentos.forEach(p => {
+    const valor = Number(p.valor_bruto) || 0;
+    const dataPagamento = new Date(p.pago_em || p.criado_em);
+
+    totalPix += valor;
+
+    if (
+      dataPagamento.getFullYear() === agora.getFullYear() &&
+      dataPagamento.getMonth() === agora.getMonth()
+    ) {
+      faturamentoMes += valor;
+    }
+
+    if (
+      dataPagamento.getFullYear() === agora.getFullYear() &&
+      dataPagamento.getMonth() === agora.getMonth() &&
+      dataPagamento.getDate() === agora.getDate()
+    ) {
+      faturamentoHoje += valor;
+    }
+  });
+
+  document.getElementById("faturamentoHoje").innerText =
+    faturamentoHoje.toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL"
+    });
+
+  document.getElementById("faturamentoMes").innerText =
+    faturamentoMes.toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL"
+    });
+
+  document.getElementById("totalPix").innerText =
+    totalPix.toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL"
+    });
+}
+    const idsEquipamentos = (equipamentos || []).map(e => e.id);
+
+let totalSessoesCliente = 0;
+
+if (idsEquipamentos.length > 0) {
+  const { data: sessoes, error: sessoesErro } =
+    await db
+      .from("sessoes")
+      .select("id,equipamento_id,status")
+      .in("equipamento_id", idsEquipamentos);
+
+  if (!sessoesErro && sessoes) {
+    totalSessoesCliente = sessoes.length;
+  }
+}
+
+document.getElementById("totalSessoes").innerText =
+  totalSessoesCliente;
 
     const lista =
       document.getElementById("listaEquipamentos");
