@@ -297,6 +297,7 @@ F<!DOCTYPE html>
     <div class="card">
       <h2>PIX</h2>
       <p class="info">Acompanhe os pagamentos recebidos via PIX.</p>
+      <div id="listaPix"></div>
     </div>
   </div>
 
@@ -526,7 +527,7 @@ document.getElementById("contaTelefone").innerText =
     const { data: pagamentos, error: pagamentosErro } =
   await db
     .from("pagamentos")
-    .select("valor_bruto,valor_cliente,status,criado_em,pago_em")
+    .select("valor_bruto,comissao_percentual,comissao_valor,valor_cliente,status,criado_em,pago_em")
     .eq("cliente_id", cliente.id)
     .eq("status", "PAID");
     
@@ -536,12 +537,52 @@ document.getElementById("contaTelefone").innerText =
   let faturamentoHoje = 0;
   let faturamentoMes = 0;
   let totalPix = 0;
+const listaPix = document.getElementById("listaPix");
 
+if (listaPix) {
+  listaPix.innerHTML = "";
+}
   pagamentos.forEach(p => {
     const valor = Number(p.valor_bruto) || 0;
     const dataPagamento = new Date(p.pago_em || p.criado_em);
 
     totalPix += valor;
+    
+    if (listaPix) {
+  const comissao = Number(p.comissao_valor) || 0;
+  const valorCliente = Number(p.valor_cliente) || 0;
+  const percentual = Number(p.comissao_percentual) || 0;
+
+  listaPix.innerHTML += `
+    <div class="equipment">
+      <strong>PIX recebido</strong>
+
+      <div>
+        Valor pago: R$ ${valor.toFixed(2)}
+      </div>
+
+      <div>
+        Taxa: ${percentual.toFixed(2)}%
+      </div>
+
+      <div>
+        Comissão: R$ ${comissao.toFixed(2)}
+      </div>
+
+      <div>
+        Valor líquido: R$ ${valorCliente.toFixed(2)}
+      </div>
+
+      <div>
+        Data: ${dataPagamento.toLocaleString("pt-BR")}
+      </div>
+
+      <div class="online">
+        ● PAGO
+      </div>
+    </div>
+  `;
+}
 
     if (
       dataPagamento.getFullYear() === agora.getFullYear() &&
