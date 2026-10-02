@@ -351,8 +351,12 @@
         .single();
 
     if (clienteErro || !cliente) {
-      console.error(clienteErro);
-      return;
+  console.error(clienteErro);
+
+  document.getElementById("loginMsg").innerText =
+    "Login realizado, mas o cadastro do cliente ainda não foi vinculado.";
+
+  return;
     }
 
     document.getElementById("loginBox").classList.add("hidden");
@@ -424,7 +428,7 @@
     } = await db.auth.getSession();
 
     if (session) {
-      carregarPainel();
+  abrirPainel();
     }
   }
 
