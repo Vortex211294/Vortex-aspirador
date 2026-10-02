@@ -288,6 +288,7 @@ F<!DOCTYPE html>
     <div class="card">
       <h2>Sessões</h2>
       <p class="info">Histórico de utilizações dos equipamentos.</p>
+      <div id="listaSessoes"></div>
     </div>
   </div>
 
@@ -584,11 +585,45 @@ if (idsEquipamentos.length > 0) {
   const { data: sessoes, error: sessoesErro } =
     await db
       .from("sessoes")
-      .select("id,equipamento_id,status")
+      .select("id,equipamento_id,pagamento_id,minutos_comprados,status,iniciado_em,finalizado_em")
       .in("equipamento_id", idsEquipamentos);
 
   if (!sessoesErro && sessoes) {
     totalSessoesCliente = sessoes.length;
+    
+    const listaSessoes = document.getElementById("listaSessoes");
+
+if (listaSessoes) {
+  listaSessoes.innerHTML = "";
+
+  sessoes.forEach(s => {
+    const equipamento = equipamentos.find(
+      e => e.id === s.equipamento_id
+    );
+
+    const dataInicio = s.iniciado_em
+      ? new Date(s.iniciado_em).toLocaleString("pt-BR")
+      : "-";
+
+    listaSessoes.innerHTML += `
+      <div class="equipment">
+        <strong>${equipamento?.nome || "Aspirador VORTEX"}</strong>
+
+        <div>
+          Minutos: ${s.minutos_comprados || 0}
+        </div>
+
+        <div>
+          Início: ${dataInicio}
+        </div>
+
+        <div>
+          Status: ${s.status || "-"}
+        </div>
+      </div>
+    `;
+  });
+}
   }
 }
 
