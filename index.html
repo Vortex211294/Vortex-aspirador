@@ -310,7 +310,9 @@
   <div id="paginaMensalidade" class="paginaVortex hidden">
     <div class="card">
       <h2>Mensalidade</h2>
-      <div class="value">R$ 50,00</div>
+      <div class="value" id="mensalidadeValor">R$ 50,00</div>
+      <div class="info" id="mensalidadeVencimento">Vencimento: --</div>
+      <div class="info" id="mensalidadeStatus">Status: --</div>
       <p class="info">Plano mensal VORTEX ASPIRADOR.</p>
     </div>
   </div>
@@ -522,7 +524,29 @@ document.getElementById("contaEmail").innerText =
 
 document.getElementById("contaTelefone").innerText =
   cliente.telefone || "-";
-
+const { data: mensalidade, error: mensalidadeErro } =
+  await db
+    .from("mensalidades")
+    .select("*")
+    .eq("cliente_id", cliente.id)
+    .order("vencimento", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+    if (!mensalidadeErro && mensalidade) {
+  document.getElementById("mensalidadeValor").innerText =
+    Number(mensalidade.valor).toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL"
+    });
+      
+      if (mensalidade.vencimento) {
+  const partes = mensalidade.vencimento.split("-");
+  document.getElementById("mensalidadeVencimento").innerText =
+    `Vencimento: ${partes[2]}/${partes[1]}/${partes[0]}`;
+}
+      document.getElementById("mensalidadeStatus").innerText =
+  `Status: ${mensalidade.status || "--"}`;
+}
     const { data: equipamentos, error } =
       await db
         .from("equipamentos")
