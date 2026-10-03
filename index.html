@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#050914">
+  <meta name="theme-color" content="#061a3a">
   <title>VORTEX ASPIRADOR</title>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 
   <style>
     * {
@@ -14,41 +15,73 @@
       font-family: Arial, sans-serif;
     }
 
+    :root {
+      --bg: #03122a;
+      --bg2: #06244e;
+      --panel: #061b38;
+      --panel2: #08264d;
+      --line: #15538c;
+      --blue: #168cff;
+      --cyan: #25a6ff;
+      --text: #f8fbff;
+      --muted: #9eb4cf;
+      --green: #16e676;
+      --red: #ff4545;
+    }
+
     body {
       margin: 0;
       min-height: 100vh;
+      color: var(--text);
       background:
-        radial-gradient(circle at top, #102a56 0%, #07101f 35%, #02050b 75%);
-      color: white;
+        radial-gradient(
+          circle at 58% 0%,
+          #0b3971 0%,
+          #061f46 28%,
+          #03142f 58%,
+          #020b1b 100%
+        );
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    .hidden {
+      display: none !important;
     }
 
     .container {
-      width: 92%;
-      max-width: 430px;
-      margin: auto;
-      padding: 35px 0;
+      min-height: 100vh;
     }
 
     .logo {
       text-align: center;
-      margin-bottom: 30px;
     }
 
     .logo-icon {
-      width: 82px;
-      height: 82px;
+      width: 92px;
+      height: 92px;
       margin: auto;
-      border: 3px solid #168cff;
+      border: 2px solid #20a5ff;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 40px;
-      box-shadow: 0 0 25px #087cff;
+      font-size: 48px;
+      font-weight: 900;
+      font-style: italic;
+      color: #22a6ff;
+      text-shadow: 3px 2px 0 #dcecff;
+      box-shadow:
+        0 0 10px #168cff,
+        inset 0 0 18px rgba(22, 140, 255, .2);
+      background: #03132d;
     }
 
     h1 {
-      margin: 14px 0 3px;
+      margin: 14px 0 4px;
       font-size: 27px;
       letter-spacing: 2px;
     }
@@ -58,59 +91,33 @@
     }
 
     .subtitle {
-      color: #8d9bb0;
-      font-size: 13px;
+      color: #a8b9ce;
+      font-size: 12px;
+      letter-spacing: 1.5px;
     }
 
     .card {
-      background: rgba(10, 18, 32, .94);
-      border: 1px solid #1c3555;
-      border-radius: 20px;
+      background:
+        linear-gradient(
+          145deg,
+          rgba(8, 31, 65, .96),
+          rgba(3, 17, 38, .96)
+        );
+      border: 1px solid #174f82;
+      border-radius: 16px;
       padding: 22px;
-      box-shadow: 0 15px 40px rgba(0,0,0,.35);
+      box-shadow: 0 14px 35px rgba(0, 0, 0, .24);
     }
 
-    input {
-      width: 100%;
-      padding: 15px;
-      margin: 7px 0;
-      border-radius: 11px;
-      border: 1px solid #263b57;
-      background: #070d17;
-      color: white;
-      outline: none;
+    .info {
+      color: var(--muted);
+      font-size: 13px;
     }
 
-    input:focus {
-      border-color: #168cff;
-    }
-
-    button {
-      width: 100%;
-      padding: 15px;
-      margin-top: 10px;
-      border: 0;
-      border-radius: 11px;
-      background: linear-gradient(90deg,#087cff,#25a6ff);
-      color: white;
-      font-weight: bold;
-      font-size: 15px;
-    }
-
-    button.secondary {
-      background: transparent;
-      border: 1px solid #168cff;
-    }
-
-    .link {
-      text-align: center;
-      color: #2498ff;
-      margin-top: 18px;
-      cursor: pointer;
-    }
-
-    .hidden {
-      display: none;
+    .value {
+      font-size: 27px;
+      font-weight: 800;
+      color: #fff;
     }
 
     .message {
@@ -120,54 +127,564 @@
       color: #aebdd0;
     }
 
-    .topbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 22px;
+    input {
+      width: 100%;
+      padding: 14px;
+      margin: 7px 0;
+      border-radius: 10px;
+      border: 1px solid #28547e;
+      background: #04142d;
+      color: #fff;
+      outline: none;
     }
 
-    .topbar button {
+    input:focus {
+      border-color: #168cff;
+      box-shadow: 0 0 0 2px rgba(22, 140, 255, .12);
+    }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      background:
+        linear-gradient(
+          90deg,
+          #087cff,
+          #25a6ff
+        );
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button.secondary {
+      background: transparent;
+      border: 1px solid #168cff;
+    }
+
+    .link {
+      text-align: center;
+      color: #39a9ff;
+      margin-top: 18px;
+      cursor: pointer;
+    }
+
+    /* LOGIN / CADASTRO */
+
+    body:not(.dashboard-open) > .container {
+      padding: 34px 0;
+    }
+
+    #loginBox,
+    #cadastroBox {
+      width: min(430px, 92vw);
+      margin: 26px auto 0;
+    }
+
+    #loginBox button,
+    #cadastroBox button {
+      width: 100%;
+      padding: 15px;
+      margin-top: 10px;
+    }
+
+    .container > .logo {
+      width: min(430px, 92vw);
+      margin: 0 auto 28px;
+    }
+
+    #painel:not(.hidden) {
+      display: grid;
+    }
+
+    /* PAINEL PRINCIPAL */
+
+    #painel {
+      min-height: 100vh;
+      grid-template-columns: 228px minmax(0, 1fr);
+      grid-template-rows: 101px auto;
+    }
+
+    #painel .sidebar {
+      grid-row: 1 / 3;
+      background:
+        linear-gradient(
+          180deg,
+          #041a39,
+          #031127
+        );
+      border-right: 1px solid #16538b;
+      padding: 26px 9px 20px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+    }
+
+    .sidebar .logo-icon {
+      width: 112px;
+      height: 112px;
+      font-size: 55px;
+    }
+
+    .sidebar h1 {
+      font-size: 25px;
+      line-height: 1.05;
+    }
+
+    .sidebar .subtitle {
+      max-width: 190px;
+      margin: 8px auto 25px;
+      line-height: 1.5;
+    }
+
+    .topbar {
+      grid-column: 2;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 34px;
+      border-bottom: 1px solid #15538c;
+      background: rgba(4, 23, 50, .72);
+      backdrop-filter: blur(8px);
+    }
+
+    .brand-top strong {
+      font-size: 31px;
+      letter-spacing: 1px;
+    }
+
+    .brand-top .subtitle {
+      margin-top: 5px;
+    }
+
+    .user-top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .user-circle {
+      width: 42px;
+      height: 42px;
+      border: 1px solid #6482a4;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 21px;
+    }
+
+    .logout-top {
       width: auto;
-      padding: 9px 14px;
+      padding: 9px 13px;
+      background: #0a315f;
+      border: 1px solid #1c69aa;
+    }
+
+    /* MENU LATERAL */
+
+    .menuVortex {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      margin-top: 20px;
+    }
+
+    .menuVortex button {
+      width: 100%;
       margin: 0;
+      padding: 14px 16px;
+      background: transparent;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      text-align: left;
+      font-weight: 600;
+    }
+
+    .menuVortex button:hover,
+    .menuVortex button.ativo {
+      background:
+        linear-gradient(
+          90deg,
+          #087cff,
+          #1267d8
+        );
+      box-shadow:
+        0 7px 18px rgba(0, 92, 255, .18);
+    }
+
+    .menu-icon {
+      width: 26px;
+      text-align: center;
+      color: #fff;
+      font-size: 20px;
+    }
+
+    .sidebar-sair {
+      margin-top: 10px !important;
+    }
+
+    /* CONTEÚDO */
+
+    .dashboard-main {
+      grid-column: 2;
+      padding: 28px 34px 38px;
+      min-width: 0;
+    }
+
+    .page-title {
+      margin: 0 0 6px;
+      font-size: 34px;
+    }
+
+    .page-subtitle {
+      margin: 0 0 22px;
+      color: #d2deec;
+    }
+
+    /* CARDS PRINCIPAIS */
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+      gap: 15px;
+      margin-bottom: 16px;
+    }
+
+    .kpi {
+      min-height: 128px;
+      padding: 20px;
+      border: 1px solid #1760a0;
+      border-radius: 14px;
+      background:
+        linear-gradient(
+          145deg,
+          #082b59,
+          #061a39
+        );
+      display: flex;
+      gap: 15px;
+      align-items: flex-start;
+    }
+
+    .kpi-icon {
+      font-size: 34px;
+      color: #fff;
+      min-width: 40px;
+      text-align: center;
+    }
+
+    .kpi-icon.money {
+      color: var(--green);
+      font-size: 44px;
+      line-height: .9;
+    }
+
+    .kpi-label {
+      font-size: 14px;
+      color: #f2f7fd;
+      margin-bottom: 8px;
+    }
+
+    .kpi-value {
+      font-size: 27px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .kpi-note {
+      color: var(--green);
+      font-size: 12px;
+      margin-top: 10px;
+    }
+
+    /* GRÁFICOS E STATUS */
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns:
+        minmax(0, 1.55fr)
+        minmax(320px, .9fr);
+      gap: 16px;
+    }
+
+    .dash-panel {
+      border: 1px solid #1760a0;
+      border-radius: 14px;
+      background:
+        linear-gradient(
+          145deg,
+          #06254d,
+          #04172f
+        );
+      padding: 17px;
+      min-width: 0;
+    }
+
+    .dash-panel h3 {
+      margin: 0 0 16px;
+      font-size: 20px;
+      display: flex;
+      gap: 9px;
+      align-items: center;
+    }
+
+    .chart-box {
+      height: 300px;
+    }
+
+    .chart-box.small {
+      height: 220px;
+    }
+
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 13px 4px;
+      border-top:
+        1px solid rgba(121, 174, 222, .18);
+      align-items: center;
+    }
+
+    .status-row:first-child {
+      border-top: 0;
+    }
+
+    .status-row strong {
+      display: block;
+    }
+
+    .status-row span {
+      display: block;
+      margin-top: 5px;
+      font-size: 13px;
+    }
+
+    .status-money {
+      text-align: right;
+    }
+
+    .status-money small {
+      display: block;
+      color: #9eb4cf;
+      margin-top: 4px;
+    }
+
+    .status-online {
+      color: var(--green) !important;
+    }
+
+    .status-offline {
+      color: var(--red) !important;
+    }
+
+    /* PIX DO DASHBOARD */
+
+    .pix-head,
+    .pix-row {
+      display: grid;
+      grid-template-columns:
+        .7fr 1.25fr .75fr .8fr .75fr;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .pix-head {
+      color: #a9bdd5;
+      font-size: 12px;
+      padding: 8px;
+      background: #0a315e;
+      border-radius: 7px;
+    }
+
+    .pix-row {
+      padding: 9px 8px;
+      border-bottom:
+        1px solid rgba(121, 174, 222, .12);
+      font-size: 12px;
+    }
+
+    .empty-dashboard {
+      color: #9eb4cf;
+      padding: 18px 4px;
+    }
+
+    /* PÁGINAS INTERNAS */
+
+    .paginaVortex > .card {
+      max-width: 1100px;
+    }
+
+    .paginaVortex h2 {
+      margin-top: 0;
     }
 
     .equipment {
-      margin-top: 15px;
-      padding: 17px;
-      border-radius: 14px;
-      background: #080f1c;
-      border: 1px solid #193759;
+      margin-top: 13px;
+      padding: 16px;
+      border-radius: 12px;
+      background: #051a37;
+      border: 1px solid #18558d;
     }
 
-    .status {
+    .online,
+    .offline {
       display: inline-block;
-      padding: 5px 10px;
+      padding: 5px 9px;
       border-radius: 20px;
       font-size: 12px;
       margin-top: 8px;
+      background: transparent !important;
     }
 
     .online {
-      background: #0c553a;
-      color: #5effb7;
+      color: var(--green);
     }
 
     .offline {
-      background: #552020;
-      color: #ff8585;
+      color: var(--red);
     }
 
-    .value {
-      font-size: 27px;
-      font-weight: bold;
-      color: #2498ff;
+    #paginaEquipamentos .equipment button {
+      padding: 12px;
     }
 
-    .info {
-      color: #9badc2;
-      font-size: 13px;
+    #paginaSuporte a {
+      text-decoration: none;
+    }
+
+    #paginaSuporte button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 10px;
+    }
+
+    /* RESPONSIVO */
+
+    @media (max-width: 1100px) {
+      .kpi-grid {
+        grid-template-columns:
+          repeat(2, 1fr);
+      }
+
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 760px) {
+      #painel {
+        display: block !important;
+      }
+
+      #painel .sidebar {
+        position: relative;
+        width: 100%;
+        height: auto;
+        padding: 16px;
+      }
+
+      .sidebar .logo-icon {
+        width: 74px;
+        height: 74px;
+        font-size: 38px;
+      }
+
+      .sidebar h1 {
+        font-size: 21px;
+        margin-top: 10px;
+      }
+
+      .sidebar .subtitle {
+        margin-bottom: 12px;
+      }
+
+      .menuVortex {
+        flex-direction: row;
+        overflow-x: auto;
+        padding-bottom: 5px;
+      }
+
+      .menuVortex button {
+        width: auto;
+        min-width: max-content;
+        padding: 10px 12px;
+      }
+
+      .menuVortex button span:last-child {
+        display: none;
+      }
+
+      .topbar {
+        padding: 14px 16px;
+      }
+
+      .brand-top strong {
+        font-size: 20px;
+      }
+
+      .brand-top .subtitle {
+        display: none;
+      }
+
+      .dashboard-main {
+        padding: 18px 14px 30px;
+      }
+
+      .page-title {
+        font-size: 27px;
+      }
+
+      .kpi-grid {
+        grid-template-columns:
+          1fr 1fr;
+        gap: 9px;
+      }
+
+      .kpi {
+        min-height: 112px;
+        padding: 14px;
+        gap: 8px;
+      }
+
+      .kpi-icon {
+        font-size: 25px;
+        min-width: 28px;
+      }
+
+      .kpi-icon.money {
+        font-size: 34px;
+      }
+
+      .kpi-value {
+        font-size: 20px;
+        white-space: normal;
+      }
+
+      .kpi-note {
+        display: none;
+      }
+
+      .chart-box {
+        height: 245px;
+      }
+
+      .pix-head,
+      .pix-row {
+        grid-template-columns:
+          .7fr 1.2fr .8fr;
+      }
+
+      .pix-head span:nth-child(3),
+      .pix-head span:nth-child(5),
+      .pix-row span:nth-child(3),
+      .pix-row span:nth-child(5) {
+        display: none;
+      }
     }
   </style>
 </head>
@@ -176,323 +693,1009 @@
 
 <div class="container">
 
-  <div class="logo">
-    <div class="logo-icon">V</div>
-    <h1>VORTEX <span class="blue">ASPIRADOR</span></h1>
-    <div class="subtitle">Gestão inteligente de autoatendimento</div>
-  </div>
-
   <!-- LOGIN -->
 
+  <div class="logo">
+    <div class="logo-icon">V</div>
+
+    <h1>
+      VORTEX
+      <span class="blue">
+        ASPIRADOR
+      </span>
+    </h1>
+
+    <div class="subtitle">
+      Gestão inteligente de autoatendimento
+    </div>
+  </div>
+
   <div id="loginBox" class="card">
+
     <h2>Entrar</h2>
 
-    <input id="loginEmail" type="email" placeholder="E-mail">
-    <input id="loginSenha" type="password" placeholder="Senha">
+    <input
+      id="loginEmail"
+      type="email"
+      placeholder="E-mail"
+    >
 
-    <button onclick="login()">ENTRAR</button>
+    <input
+      id="loginSenha"
+      type="password"
+      placeholder="Senha"
+    >
 
-    <div class="link" onclick="mostrarCadastro()">
+    <button onclick="login()">
+      ENTRAR
+    </button>
+
+    <div
+      class="link"
+      onclick="mostrarCadastro()"
+    >
       Criar minha conta
     </div>
 
-    <div id="loginMsg" class="message"></div>
+    <div
+      id="loginMsg"
+      class="message"
+    ></div>
+
   </div>
 
   <!-- CADASTRO -->
 
-  <div id="cadastroBox" class="card hidden">
+  <div
+    id="cadastroBox"
+    class="card hidden"
+  >
+
     <h2>Criar conta</h2>
 
-    <input id="nome" placeholder="Nome completo">
-    <input id="cpf" placeholder="CPF ou CNPJ">
-    <input id="telefone" placeholder="Telefone">
-    <input id="endereco" placeholder="Endereço">
-    <input id="email" type="email" placeholder="E-mail">
-    <input id="senha" type="password" placeholder="Crie uma senha">
+    <input
+      id="nome"
+      placeholder="Nome completo"
+    >
 
-    <button onclick="cadastrar()">CADASTRAR</button>
+    <input
+      id="cpf"
+      placeholder="CPF ou CNPJ"
+    >
 
-    <button class="secondary" onclick="mostrarLogin()">
+    <input
+      id="telefone"
+      placeholder="Telefone"
+    >
+
+    <input
+      id="endereco"
+      placeholder="Endereço"
+    >
+
+    <input
+      id="email"
+      type="email"
+      placeholder="E-mail"
+    >
+
+    <input
+      id="senha"
+      type="password"
+      placeholder="Crie uma senha"
+    >
+
+    <button onclick="cadastrar()">
+      CADASTRAR
+    </button>
+
+    <button
+      class="secondary"
+      onclick="mostrarLogin()"
+    >
       VOLTAR
     </button>
 
-    <div id="cadastroMsg" class="message"></div>
+    <div
+      id="cadastroMsg"
+      class="message"
+    ></div>
+
   </div>
 
-  <!-- PAINEL NOVO VORTEX -->
+  <!-- PAINEL VORTEX -->
 
-<div id="painel" class="hidden">
+  <div
+    id="painel"
+    class="hidden"
+  >
 
-  <div class="topbar">
-    <div>
-      <strong>Meu VORTEX</strong>
-      <div id="nomeCliente" class="info"></div>
-    </div>
+    <!-- MENU LATERAL -->
 
-    <button onclick="sair()">Sair</button>
-  </div>
+    <aside class="sidebar">
 
-  <!-- INÍCIO -->
-  <div id="paginaInicio" class="paginaVortex">
-    <div class="card">
-      <div class="info">Mensalidade</div>
-      <div class="value">R$ 50,00</div>
+      <div class="logo">
 
-      <h3>Meus equipamentos</h3>
-      <div id="listaEquipamentos"></div>
-    </div>
-  </div>
+        <div class="logo-icon">
+          V
+        </div>
 
-  <!-- EQUIPAMENTOS -->
-  <div id="paginaEquipamentos" class="paginaVortex hidden">
-    <div class="card">
-      <h2>Equipamentos</h2>
-      <p class="info">
-        Consulte seus aspiradores VORTEX e o status de cada equipamento.
-      </p>
-      
-      <div id="listaEquipamentosPagina"></div>
-    </div>
-  </div>
+        <h1>
+          VORTEX
+          <span class="blue">
+            ASPIRADOR
+          </span>
+        </h1>
 
-  <!-- FATURAMENTO --><div id="paginaFaturamento" class="paginaVortex hidden">
-  <div class="card">
-    <h2>Faturamento</h2>
-    <p class="info">Acompanhe o faturamento dos seus equipamentos.</p>
+        <div class="subtitle">
+          GESTÃO INTELIGENTE
+          <br>
+          DE AUTOATENDIMENTO
+        </div>
 
-    <div class="equipment">
-      <div class="info">Faturamento hoje</div>
-      <strong id="faturamentoHoje">R$ 0,00</strong>
-    </div>
+      </div>
 
-    <div class="equipment">
-      <div class="info">Faturamento este mês</div>
-      <strong id="faturamentoMes">R$ 0,00</strong>
-    </div>
+      <div class="menuVortex">
 
-    <div class="equipment">
-      <div class="info">Sessões realizadas</div>
-      <strong id="totalSessoes">0</strong>
-    </div>
+        <button
+          class="ativo"
+          data-page="Inicio"
+          onclick="abrirPagina('Inicio')"
+        >
+          <span class="menu-icon">⌂</span>
+          <span>Início</span>
+        </button>
 
-    <div class="equipment">
-      <div class="info">Recebido via PIX</div>
-      <strong id="totalPix">R$ 0,00</strong>
-    </div>
-   <div class="equipment">
-  <div class="info">Saldo líquido do cliente</div>
-  <strong id="saldoLiquido">R$ 0,00</strong>
-</div>
-  <h3>Faturamento por equipamento</h3>
-<div id="faturamentoPorEquipamento"></div>
-  </div>
-</div>
-  <!-- SESSÕES -->
-  <div id="paginaSessoes" class="paginaVortex hidden">
-    <div class="card">
-      <h2>Sessões</h2>
-      <p class="info">Histórico de utilizações dos equipamentos.</p>
-      <div id="listaSessoes"></div>
-    </div>
-  </div>
+        <button
+          data-page="Equipamentos"
+          onclick="abrirPagina('Equipamentos')"
+        >
+          <span class="menu-icon">⚒</span>
+          <span>Equipamentos</span>
+        </button>
 
-  <!-- PIX -->
-  <div id="paginaPix" class="paginaVortex hidden">
-    <div class="card">
-      <h2>PIX</h2>
-      <p class="info">Acompanhe os pagamentos recebidos via PIX.</p>
-      <div id="listaPix"></div>
-    </div>
-  </div>
+        <button
+          data-page="Faturamento"
+          onclick="abrirPagina('Faturamento')"
+        >
+          <span class="menu-icon">▥</span>
+          <span>Faturamento</span>
+        </button>
 
-  <!-- MENSALIDADE -->
-  <div id="paginaMensalidade" class="paginaVortex hidden">
-    <div class="card">
-      <h2>Mensalidade</h2>
-      <div class="value" id="mensalidadeValor">R$ 50,00</div>
-      <div class="info" id="mensalidadeVencimento">Vencimento: --</div>
-      <div class="info" id="mensalidadeStatus">Status: --</div>
-      <div class="info" id="mensalidadePagoEm"></div>
-      <p class="info">Plano mensal VORTEX ASPIRADOR.</p>
-    </div>
-  </div>
+        <button
+          data-page="Sessoes"
+          onclick="abrirPagina('Sessoes')"
+        >
+          <span class="menu-icon">◷</span>
+          <span>Sessões</span>
+        </button>
 
-  <!-- MINHA CONTA -->
-  <div id="paginaConta" class="paginaVortex hidden">
-    <div class="card">
-      <h2>Minha Conta</h2>
+        <button
+          data-page="Pix"
+          onclick="abrirPagina('Pix')"
+        >
+          <span class="menu-icon">▦</span>
+          <span>PIX</span>
+        </button>
 
-      <p class="info">Nome</p>
-      <strong id="contaNome">-</strong>
+        <button
+          data-page="Mensalidade"
+          onclick="abrirPagina('Mensalidade')"
+        >
+          <span class="menu-icon">▰</span>
+          <span>Mensalidade</span>
+        </button>
 
-      <p class="info">E-mail</p>
-      <strong id="contaEmail">-</strong>
+        <button
+          data-page="Conta"
+          onclick="abrirPagina('Conta')"
+        >
+          <span class="menu-icon">●</span>
+          <span>Conta</span>
+        </button>
 
-      <p class="info">Telefone</p>
-      <strong id="contaTelefone">-</strong>
-    </div>
-  </div>
+        <button
+          data-page="Suporte"
+          onclick="abrirPagina('Suporte')"
+        >
+          <span class="menu-icon">◉</span>
+          <span>Suporte</span>
+        </button>
 
-  <!-- SUPORTE -->
-  <div id="paginaSuporte" class="paginaVortex hidden">
-    <div class="card">
-      <h2>Suporte</h2>
-      <p class="info">
-  Central de suporte VORTEX ASPIRADOR.
-</p>
+        <button
+          class="sidebar-sair"
+          onclick="sair()"
+        >
+          <span class="menu-icon">⇥</span>
+          <span>Sair</span>
+        </button>
 
-<a href="https://wa.me/5515998243092" target="_blank">
-  <button type="button">WhatsApp (15) 99824-3092</button>
-</a>
+      </div>
 
-<a href="https://wa.me/5511977647233" target="_blank">
-  <button type="button">WhatsApp (11) 97764-7233</button>
-</a>
-    </div>
-  </div>
+    </aside>
 
-  <!-- MENU -->
-  <div class="menuVortex">
+    <!-- TOPO -->
 
-    <button type="button" onclick="abrirPagina('Inicio')">
-      Início
-    </button>
+    <header class="topbar">
 
-    <button type="button" onclick="abrirPagina('Equipamentos')">
-      Equipamentos
-    </button>
+      <div class="brand-top">
 
-    <button type="button" onclick="abrirPagina('Faturamento')">
-      Faturamento
-    </button>
+        <strong>
+          VORTEX
+          <span class="blue">
+            ASPIRADOR
+          </span>
+        </strong>
 
-    <button type="button" onclick="abrirPagina('Sessoes')">
-      Sessões
-    </button>
+        <div class="subtitle">
+          GESTÃO INTELIGENTE DE AUTOATENDIMENTO
+        </div>
 
-    <button type="button" onclick="abrirPagina('Pix')">
-      PIX
-    </button>
+      </div>
 
-    <button type="button" onclick="abrirPagina('Mensalidade')">
-      Mensalidade
-    </button>
+      <div class="user-top">
 
-    <button type="button" onclick="abrirPagina('Conta')">
-      Conta
-    </button>
+        <div class="user-circle">
+          ●
+        </div>
 
-    <button type="button" onclick="abrirPagina('Suporte')">
-      Suporte
-    </button>
+        <div>
+          <strong id="nomeCliente">
+            Meu VORTEX
+          </strong>
+
+          <div class="info">
+            Cliente
+          </div>
+        </div>
+
+        <button
+          class="logout-top"
+          onclick="sair()"
+        >
+          Sair
+        </button>
+
+      </div>
+
+    </header>
+
+    <!-- CONTEÚDO -->
+
+    <main class="dashboard-main">
+
+      <!-- INÍCIO -->
+
+      <div
+        id="paginaInicio"
+        class="paginaVortex"
+      >
+
+        <h2 class="page-title">
+          Meu VORTEX
+        </h2>
+
+        <p class="page-subtitle">
+          Acompanhe o desempenho dos seus
+          equipamentos em tempo real.
+        </p>
+
+        <!-- CARDS -->
+
+        <div class="kpi-grid">
+
+          <div class="kpi">
+
+            <div class="kpi-icon money">
+              $
+            </div>
+
+            <div>
+
+              <div class="kpi-label">
+                Faturamento hoje
+              </div>
+
+              <div
+                class="kpi-value"
+                id="dashHoje"
+              >
+                R$ 0,00
+              </div>
+
+              <div class="kpi-note">
+                ● Dados atualizados
+              </div>
+
+            </div>
+
+          </div>
+
+          <div class="kpi">
+
+            <div class="kpi-icon">
+              ▣
+            </div>
+
+            <div>
+
+              <div class="kpi-label">
+                Faturamento do mês
+              </div>
+
+              <div
+                class="kpi-value"
+                id="dashMes"
+              >
+                R$ 0,00
+              </div>
+
+              <div class="kpi-note">
+                ● Pagamentos confirmados
+              </div>
+
+            </div>
+
+          </div>
+
+          <div class="kpi">
+
+            <div class="kpi-icon">
+              ◷
+            </div>
+
+            <div>
+
+              <div class="kpi-label">
+                Sessões realizadas
+              </div>
+
+              <div
+                class="kpi-value"
+                id="dashSessoes"
+              >
+                0
+              </div>
+
+              <div class="kpi-note">
+                ● Histórico VORTEX
+              </div>
+
+            </div>
+
+          </div>
+
+          <div class="kpi">
+
+            <div class="kpi-icon">
+              ▤
+            </div>
+
+            <div>
+
+              <div class="kpi-label">
+                Equipamentos online
+              </div>
+
+              <div
+                class="kpi-value"
+                id="dashOnline"
+              >
+                0 de 0
+              </div>
+
+              <div class="kpi-note">
+                ● Monitoramento atual
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- GRÁFICOS -->
+
+        <div class="dashboard-grid">
+
+          <section class="dash-panel">
+
+            <h3>
+              ▥ Faturamento por equipamento
+            </h3>
+
+            <div class="chart-box">
+
+              <canvas
+                id="graficoEquipamentos"
+              ></canvas>
+
+            </div>
+
+          </section>
+
+          <section class="dash-panel">
+
+            <h3>
+              ▤ Status dos equipamentos
+            </h3>
+
+            <div
+              id="statusEquipamentos"
+            ></div>
+
+          </section>
+
+          <section class="dash-panel">
+
+            <h3>
+              ↗ Faturamento por dia
+            </h3>
+
+            <div class="chart-box small">
+
+              <canvas
+                id="graficoDias"
+              ></canvas>
+
+            </div>
+
+          </section>
+
+          <section class="dash-panel">
+
+            <h3>
+              ▦ Últimos pagamentos (PIX)
+            </h3>
+
+            <div class="pix-head">
+              <span>Data</span>
+              <span>Equipamento</span>
+              <span>Minutos</span>
+              <span>Valor</span>
+              <span>Status</span>
+            </div>
+
+            <div
+              id="ultimosPix"
+            ></div>
+
+          </section>
+
+        </div>
+
+      </div>
+
+      <!-- EQUIPAMENTOS -->
+
+      <div
+        id="paginaEquipamentos"
+        class="paginaVortex hidden"
+      >
+
+        <div class="card">
+
+          <h2>
+            Equipamentos
+          </h2>
+
+          <p class="info">
+            Consulte seus aspiradores VORTEX
+            e o status de cada equipamento.
+          </p>
+
+          <div
+            id="listaEquipamentosPagina"
+          ></div>
+
+        </div>
+
+      </div>
+
+      <!-- FATURAMENTO -->
+
+      <div
+        id="paginaFaturamento"
+        class="paginaVortex hidden"
+      >
+
+        <div class="card">
+
+          <h2>
+            Faturamento
+          </h2>
+
+          <p class="info">
+            Acompanhe o faturamento dos
+            seus equipamentos.
+          </p>
+
+          <div class="equipment">
+
+            <div class="info">
+              Faturamento hoje
+            </div>
+
+            <strong id="faturamentoHoje">
+              R$ 0,00
+            </strong>
+
+          </div>
+
+          <div class="equipment">
+
+            <div class="info">
+              Faturamento este mês
+            </div>
+
+            <strong id="faturamentoMes">
+              R$ 0,00
+            </strong>
+
+          </div>
+
+          <div class="equipment">
+
+            <div class="info">
+              Sessões realizadas
+            </div>
+
+            <strong id="totalSessoes">
+              0
+            </strong>
+
+          </div>
+
+          <div class="equipment">
+
+            <div class="info">
+              Recebido via PIX
+            </div>
+
+            <strong id="totalPix">
+              R$ 0,00
+            </strong>
+
+          </div>
+
+          <div class="equipment">
+
+            <div class="info">
+              Saldo líquido do cliente
+            </div>
+
+            <strong id="saldoLiquido">
+              R$ 0,00
+            </strong>
+
+          </div>
+
+          <h3>
+            Faturamento por equipamento
+          </h3>
+
+          <div
+            id="faturamentoPorEquipamento"
+          ></div>
+
+        </div>
+
+      </div>
+
+      <!-- SESSÕES -->
+
+      <div
+        id="paginaSessoes"
+        class="paginaVortex hidden"
+      >
+
+        <div class="card">
+
+          <h2>
+            Sessões
+          </h2>
+
+          <p class="info">
+            Histórico de utilizações
+            dos equipamentos.
+          </p>
+
+          <div
+            id="listaSessoes"
+          ></div>
+
+        </div>
+
+      </div>
+
+      <!-- PIX -->
+
+      <div
+        id="paginaPix"
+        class="paginaVortex hidden"
+      >
+
+        <div class="card">
+
+          <h2>
+            PIX
+          </h2>
+
+          <p class="info">
+            Acompanhe os pagamentos
+            recebidos via PIX.
+          </p>
+
+          <div
+            id="listaPix"
+          ></div>
+
+        </div>
+
+      </div>
+
+      <!-- MENSALIDADE -->
+
+      <div
+        id="paginaMensalidade"
+        class="paginaVortex hidden"
+      >
+
+        <div class="card">
+
+          <h2>
+            Mensalidade
+          </h2>
+
+          <div
+            class="value"
+            id="mensalidadeValor"
+          >
+            R$ 50,00
+          </div>
+
+          <div
+            class="info"
+            id="mensalidadeVencimento"
+          >
+            Vencimento: --
+          </div>
+
+          <div
+            class="info"
+            id="mensalidadeStatus"
+          >
+            Status: --
+          </div>
+
+          <div
+            class="info"
+            id="mensalidadePagoEm"
+          ></div>
+
+          <p class="info">
+            Plano mensal VORTEX ASPIRADOR.
+          </p>
+
+        </div>
+
+      </div>
+
+      <!-- CONTA -->
+
+      <div
+        id="paginaConta"
+        class="paginaVortex hidden"
+      >
+
+        <div class="card">
+
+          <h2>
+            Minha Conta
+          </h2>
+
+          <p class="info">
+            Nome
+          </p>
+
+          <strong id="contaNome">
+            -
+          </strong>
+
+          <p class="info">
+            E-mail
+          </p>
+
+          <strong id="contaEmail">
+            -
+          </strong>
+
+          <p class="info">
+            Telefone
+          </p>
+
+          <strong id="contaTelefone">
+            -
+          </strong>
+
+        </div>
+
+      </div>
+
+      <!-- SUPORTE -->
+
+      <div
+        id="paginaSuporte"
+        class="paginaVortex hidden"
+      >
+
+        <div class="card">
+
+          <h2>
+            Suporte
+          </h2>
+
+          <p class="info">
+            Central de suporte
+            VORTEX ASPIRADOR.
+          </p>
+
+          <a
+            href="https://wa.me/5515998243092"
+            target="_blank"
+          >
+            <button type="button">
+              WhatsApp (15) 99824-3092
+            </button>
+          </a>
+
+          <a
+            href="https://wa.me/5511977647233"
+            target="_blank"
+          >
+            <button type="button">
+              WhatsApp (11) 97764-7233
+            </button>
+          </a>
+
+        </div>
+
+      </div>
+
+      <!-- COMPATIBILIDADE -->
+
+      <div
+        id="listaEquipamentos"
+        class="hidden"
+      ></div>
+
+    </main>
 
   </div>
 
 </div>
 
 <script>
+
   const SUPABASE_URL =
     "https://rcqqjsxbyhwgneqlkgqs.supabase.co";
 
   const SUPABASE_KEY =
     "sb_publishable_2kdQbLws9nvdZQWHHp0fKg_Rlv88IOV";
 
-  const db = supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-  ); 
+  const db =
+    supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
+
+
   function abrirPagina(pagina) {
-    const paginas = document.querySelectorAll(".paginaVortex");
+
+    const paginas =
+      document.querySelectorAll(
+        ".paginaVortex"
+      );
 
     paginas.forEach(p => {
       p.classList.add("hidden");
     });
 
-    const destino = document.getElementById("pagina" + pagina);
+    const destino =
+      document.getElementById(
+        "pagina" + pagina
+      );
 
     if (destino) {
       destino.classList.remove("hidden");
     }
+
+    document
+      .querySelectorAll(
+        ".menuVortex button"
+      )
+      .forEach(btn => {
+
+        btn.classList.toggle(
+          "ativo",
+          btn.dataset.page === pagina
+        );
+
+      });
+
   }
+
 
   function mostrarCadastro() {
-    document.getElementById("loginBox").classList.add("hidden");
-    document.getElementById("cadastroBox").classList.remove("hidden");
+
+    document
+      .getElementById("loginBox")
+      .classList.add("hidden");
+
+    document
+      .getElementById("cadastroBox")
+      .classList.remove("hidden");
+
   }
 
+
   function mostrarLogin() {
-    document.getElementById("cadastroBox").classList.add("hidden");
-    document.getElementById("loginBox").classList.remove("hidden");
+
+    document
+      .getElementById("cadastroBox")
+      .classList.add("hidden");
+
+    document
+      .getElementById("loginBox")
+      .classList.remove("hidden");
+
   }
+
 
   async function cadastrar() {
 
-    const nome = document.getElementById("nome").value.trim();
-    const cpf = document.getElementById("cpf").value.trim();
-    const telefone = document.getElementById("telefone").value.trim();
-    const endereco = document.getElementById("endereco").value.trim();
-    const email = document.getElementById("email").value.trim();
-    const senha = document.getElementById("senha").value;
+    const nome =
+      document
+        .getElementById("nome")
+        .value
+        .trim();
 
-    const msg = document.getElementById("cadastroMsg");
+    const cpf =
+      document
+        .getElementById("cpf")
+        .value
+        .trim();
+
+    const telefone =
+      document
+        .getElementById("telefone")
+        .value
+        .trim();
+
+    const endereco =
+      document
+        .getElementById("endereco")
+        .value
+        .trim();
+
+    const email =
+      document
+        .getElementById("email")
+        .value
+        .trim();
+
+    const senha =
+      document
+        .getElementById("senha")
+        .value;
+
+    const msg =
+      document
+        .getElementById(
+          "cadastroMsg"
+        );
 
     if (!nome || !email || !senha) {
-      msg.innerText = "Preencha nome, e-mail e senha.";
+
+      msg.innerText =
+        "Preencha nome, e-mail e senha.";
+
       return;
+
     }
 
-    msg.innerText = "Criando conta...";
+    msg.innerText =
+      "Criando conta...";
 
-    const { error } = await db.auth.signUp({
-      email,
-      password: senha,
+    const { error } =
+      await db.auth.signUp({
 
-      options: {
-        data: {
-          nome: nome,
-          cpf_cnpj: cpf,
-          telefone: telefone,
-          endereco: endereco
+        email,
+
+        password: senha,
+
+        options: {
+
+          data: {
+
+            nome: nome,
+
+            cpf_cnpj: cpf,
+
+            telefone: telefone,
+
+            endereco: endereco
+
+          }
+
         }
-      }
-    });
+
+      });
 
     if (error) {
-      msg.innerText = error.message;
+
+      msg.innerText =
+        error.message;
+
       return;
+
     }
 
     msg.innerText =
       "Cadastro realizado. Confira seu e-mail para confirmar a conta.";
+
   }
+
 
   async function login() {
 
     const email =
-      document.getElementById("loginEmail").value.trim();
+      document
+        .getElementById(
+          "loginEmail"
+        )
+        .value
+        .trim();
 
     const senha =
-      document.getElementById("loginSenha").value;
+      document
+        .getElementById(
+          "loginSenha"
+        )
+        .value;
 
     const msg =
-      document.getElementById("loginMsg");
+      document
+        .getElementById(
+          "loginMsg"
+        );
 
-    msg.innerText = "Entrando...";
+    msg.innerText =
+      "Entrando...";
 
     const { error } =
-      await db.auth.signInWithPassword({
-        email: email,
-        password: senha
-      });
+      await db.auth
+        .signInWithPassword({
+
+          email: email,
+
+          password: senha
+
+        });
 
     if (error) {
-      msg.innerText = "E-mail ou senha inválidos.";
+
+      msg.innerText =
+        "E-mail ou senha inválidos.";
+
       return;
+
     }
 
     await abrirPainel();
+
   }
+
 
   async function abrirPainel() {
 
@@ -503,451 +1706,1873 @@
       return;
     }
 
-    const { data: cliente, error: clienteErro } =
+
+    const {
+      data: cliente,
+      error: clienteErro
+    } =
       await db
         .from("clientes")
         .select("*")
-        .eq("user_id", authData.user.id)
+        .eq(
+          "user_id",
+          authData.user.id
+        )
         .single();
 
-    if (clienteErro || !cliente) {
-  console.error(clienteErro);
 
-  document.getElementById("loginMsg").innerText =
-    "Login realizado, mas o cadastro do cliente ainda não foi vinculado.";
+    if (
+      clienteErro ||
+      !cliente
+    ) {
 
-  return;
+      console.error(
+        clienteErro
+      );
+
+      document
+        .getElementById(
+          "loginMsg"
+        )
+        .innerText =
+          "Login realizado, mas o cadastro do cliente ainda não foi vinculado.";
+
+      return;
+
     }
 
-    document.getElementById("loginBox").classList.add("hidden");
-    document.getElementById("cadastroBox").classList.add("hidden");
-    document.getElementById("painel").classList.remove("hidden");
 
-    document.getElementById("nomeCliente").innerText =
-      cliente.nome || authData.user.email;
-    document.getElementById("contaNome").innerText =
-  cliente.nome || "-";
+    document
+      .querySelector(
+        ".container > .logo"
+      )
+      .classList.add(
+        "hidden"
+      );
 
-document.getElementById("contaEmail").innerText =
-  authData.user.email || "-";
+    document
+      .getElementById(
+        "loginBox"
+      )
+      .classList.add(
+        "hidden"
+      );
 
-document.getElementById("contaTelefone").innerText =
-  cliente.telefone || "-";
-const { data: mensalidade, error: mensalidadeErro } =
-  await db
-    .from("mensalidades")
-    .select("*")
-    .eq("cliente_id", cliente.id)
-    .order("vencimento", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-    if (!mensalidadeErro && mensalidade) {
-  document.getElementById("mensalidadeValor").innerText =
-    Number(mensalidade.valor).toLocaleString("pt-BR", {
-      style: "currency",
-      currency: "BRL"
-    });
-      
-      if (mensalidade.vencimento) {
-  const partes = mensalidade.vencimento.split("-");
-  document.getElementById("mensalidadeVencimento").innerText =
-    `Vencimento: ${partes[2]}/${partes[1]}/${partes[0]}`;
-}
-      document.getElementById("mensalidadeStatus").innerText =
-  `Status: ${mensalidade.status || "--"}`;
-      const pagoEm = document.getElementById("mensalidadePagoEm");
+    document
+      .getElementById(
+        "cadastroBox"
+      )
+      .classList.add(
+        "hidden"
+      );
 
-if (mensalidade.pago_em) {
-  pagoEm.innerText =
-    `Pago em: ${new Date(mensalidade.pago_em).toLocaleString("pt-BR")}`;
-} else {
-  pagoEm.innerText = "";
-}
-}
-    const { data: equipamentos, error } =
+    document
+      .getElementById(
+        "painel"
+      )
+      .classList.remove(
+        "hidden"
+      );
+
+
+    document
+      .getElementById(
+        "nomeCliente"
+      )
+      .innerText =
+        cliente.nome ||
+        authData.user.email;
+
+
+    document
+      .getElementById(
+        "contaNome"
+      )
+      .innerText =
+        cliente.nome || "-";
+
+
+    document
+      .getElementById(
+        "contaEmail"
+      )
+      .innerText =
+        authData.user.email || "-";
+
+
+    document
+      .getElementById(
+        "contaTelefone"
+      )
+      .innerText =
+        cliente.telefone || "-";
+
+
+    /* MENSALIDADE */
+
+    const {
+      data: mensalidade,
+      error: mensalidadeErro
+    } =
+      await db
+        .from("mensalidades")
+        .select("*")
+        .eq(
+          "cliente_id",
+          cliente.id
+        )
+        .order(
+          "vencimento",
+          { ascending: false }
+        )
+        .limit(1)
+        .maybeSingle();
+
+
+    if (
+      !mensalidadeErro &&
+      mensalidade
+    ) {
+
+      document
+        .getElementById(
+          "mensalidadeValor"
+        )
+        .innerText =
+          Number(
+            mensalidade.valor
+          )
+          .toLocaleString(
+            "pt-BR",
+            {
+              style: "currency",
+              currency: "BRL"
+            }
+          );
+
+
+      if (
+        mensalidade.vencimento
+      ) {
+
+        const partes =
+          mensalidade
+            .vencimento
+            .split("-");
+
+        document
+          .getElementById(
+            "mensalidadeVencimento"
+          )
+          .innerText =
+            `Vencimento: ${partes[2]}/${partes[1]}/${partes[0]}`;
+
+      }
+
+
+      document
+        .getElementById(
+          "mensalidadeStatus"
+        )
+        .innerText =
+          `Status: ${mensalidade.status || "--"}`;
+
+
+      const pagoEm =
+        document
+          .getElementById(
+            "mensalidadePagoEm"
+          );
+
+
+      if (
+        mensalidade.pago_em
+      ) {
+
+        pagoEm.innerText =
+          `Pago em: ${new Date(
+            mensalidade.pago_em
+          ).toLocaleString(
+            "pt-BR"
+          )}`;
+
+      } else {
+
+        pagoEm.innerText = "";
+
+      }
+
+    }
+
+
+    /* EQUIPAMENTOS */
+
+    const {
+      data: equipamentos,
+      error
+    } =
       await db
         .from("equipamentos")
-        .select("id,codigo,nome,preco_minuto,status,tempo_minutos,valor_tempo")
-        .eq("cliente_id", cliente.id);
-    
-    const { data: pagamentos, error: pagamentosErro } =
-  await db
-    .from("pagamentos")
-    .select("*")
-    .eq("cliente_id", cliente.id)
-    .eq("status", "PAID");
-    
-    if (!pagamentosErro && pagamentos) {
-  const agora = new Date();
+        .select(
+          "id,codigo,nome,preco_minuto,status,tempo_minutos,valor_tempo"
+        )
+        .eq(
+          "cliente_id",
+          cliente.id
+        );
 
-  let faturamentoHoje = 0;
-  let faturamentoMes = 0;
-  let totalPix = 0;
-  let saldoLiquido = 0;
-const listaPix = document.getElementById("listaPix");
 
-if (listaPix) {
-  listaPix.innerHTML = "";
-}
-      const faturamentoEquipamentos = {};
-  pagamentos.forEach(p => {
-    const valor = Number(p.valor_bruto) || 0;
-    const equipamentoId = p.equipamento_id;
-    if (equipamentoId) {
-      faturamentoEquipamentos[equipamentoId] =
-        (faturamentoEquipamentos[equipamentoId] || 0) + valor;
+    /* PAGAMENTOS */
+
+    const {
+      data: pagamentos,
+      error: pagamentosErro
+    } =
+      await db
+        .from("pagamentos")
+        .select("*")
+        .eq(
+          "cliente_id",
+          cliente.id
+        )
+        .eq(
+          "status",
+          "PAID"
+        );
+
+
+    let pagamentosCliente =
+      pagamentos || [];
+
+
+    let faturamentoHoje = 0;
+
+    let faturamentoMes = 0;
+
+    let totalPix = 0;
+
+    let saldoLiquido = 0;
+
+    const faturamentoEquipamentos = {};
+
+
+    const listaPix =
+      document
+        .getElementById(
+          "listaPix"
+        );
+
+
+    if (listaPix) {
+      listaPix.innerHTML = "";
     }
-    const dataPagamento = new Date(p.pago_em || p.criado_em);
 
-    totalPix += valor;
-    if (p.repassado === false) {
-  saldoLiquido += Number(p.valor_cliente) || 0;
-}
-    if (listaPix)
-    {console.log("PIX ENCONTRADO:", p);
-     
-  const percentual = Number(p.comissao_percentual) || 2.99;
-const comissao = valor * (percentual / 100);
-  const valorCliente = Number(p.valor_cliente) || 0;
-  const equipamentoPix = equipamentos.find(e => e.id === p.equipamento_id);
-
-  listaPix.innerHTML += `
-    <div class="equipment">
-      <strong>PIX recebido</strong>
-<div>
-  Equipamento: ${equipamentoPix ? equipamentoPix.nome : "Não identificado"}
-</div>
-<div>
-  Minutos: ${p.minutos || 0}
-</div>
-      <div>
-        Valor pago: ${valor.toLocaleString("pt-BR", {
-  style: "currency",
-  currency: "BRL"
-})}
-      </div>
-
-      <div>
-        Taxa: ${percentual.toLocaleString("pt-BR", {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2
-})}%
-      </div>
-
-      <div>
-        Comissão: ${comissao.toLocaleString("pt-BR", {
-  style: "currency",
-  currency: "BRL"
-})}
-      </div>
-
-      <div>
-        Valor líquido: ${valorCliente.toLocaleString("pt-BR", {
-  style: "currency",
-  currency: "BRL"
-})}
-      </div>
-
-      <div>
-        Data: ${dataPagamento.toLocaleString("pt-BR")}
-      </div>
-
-      <div class="online">
-        ● PAGO
-      </div>
-    </div>
-  `;
-}
 
     if (
-      dataPagamento.getFullYear() === agora.getFullYear() &&
-      dataPagamento.getMonth() === agora.getMonth()
+      !pagamentosErro &&
+      pagamentos
     ) {
-      faturamentoMes += valor;
+
+      const agora =
+        new Date();
+
+
+      pagamentos.forEach(p => {
+
+        const valor =
+          Number(
+            p.valor_bruto
+          ) || 0;
+
+
+        const equipamentoId =
+          p.equipamento_id;
+
+
+        if (
+          equipamentoId
+        ) {
+
+          faturamentoEquipamentos[
+            equipamentoId
+          ] =
+            (
+              faturamentoEquipamentos[
+                equipamentoId
+              ] || 0
+            ) + valor;
+
+        }
+
+
+        const dataPagamento =
+          new Date(
+            p.pago_em ||
+            p.criado_em
+          );
+
+
+        totalPix += valor;
+
+
+        if (
+          p.repassado === false
+        ) {
+
+          saldoLiquido +=
+            Number(
+              p.valor_cliente
+            ) || 0;
+
+        }
+
+
+        if (listaPix) {
+
+          const percentual =
+            Number(
+              p.comissao_percentual
+            ) || 2.99;
+
+
+          const comissao =
+            valor *
+            (
+              percentual /
+              100
+            );
+
+
+          const valorCliente =
+            Number(
+              p.valor_cliente
+            ) || 0;
+
+
+          const equipamentoPix =
+            (equipamentos || [])
+              .find(
+                e =>
+                  e.id ===
+                  p.equipamento_id
+              );
+
+
+          listaPix.innerHTML += `
+
+            <div class="equipment">
+
+              <strong>
+                PIX recebido
+              </strong>
+
+              <div>
+                Equipamento:
+                ${
+                  equipamentoPix
+                    ? equipamentoPix.nome
+                    : "Não identificado"
+                }
+              </div>
+
+              <div>
+                Minutos:
+                ${p.minutos || 0}
+              </div>
+
+              <div>
+                Valor pago:
+                ${
+                  valor.toLocaleString(
+                    "pt-BR",
+                    {
+                      style: "currency",
+                      currency: "BRL"
+                    }
+                  )
+                }
+              </div>
+
+              <div>
+                Taxa:
+                ${
+                  percentual
+                    .toLocaleString(
+                      "pt-BR",
+                      {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                      }
+                    )
+                }%
+              </div>
+
+              <div>
+                Comissão:
+                ${
+                  comissao
+                    .toLocaleString(
+                      "pt-BR",
+                      {
+                        style: "currency",
+                        currency: "BRL"
+                      }
+                    )
+                }
+              </div>
+
+              <div>
+                Valor líquido:
+                ${
+                  valorCliente
+                    .toLocaleString(
+                      "pt-BR",
+                      {
+                        style: "currency",
+                        currency: "BRL"
+                      }
+                    )
+                }
+              </div>
+
+              <div>
+                Data:
+                ${
+                  dataPagamento
+                    .toLocaleString(
+                      "pt-BR"
+                    )
+                }
+              </div>
+
+              <div class="online">
+                ● PAGO
+              </div>
+
+            </div>
+
+          `;
+
+        }
+
+
+        if (
+          dataPagamento.getFullYear() ===
+            agora.getFullYear() &&
+
+          dataPagamento.getMonth() ===
+            agora.getMonth()
+        ) {
+
+          faturamentoMes +=
+            valor;
+
+        }
+
+
+        if (
+          dataPagamento.getFullYear() ===
+            agora.getFullYear() &&
+
+          dataPagamento.getMonth() ===
+            agora.getMonth() &&
+
+          dataPagamento.getDate() ===
+            agora.getDate()
+        ) {
+
+          faturamentoHoje +=
+            valor;
+
+        }
+
+      });
+
     }
+
+
+    /* FATURAMENTO POR EQUIPAMENTO */
+
+    const listaFaturamentoEquipamentos =
+      document
+        .getElementById(
+          "faturamentoPorEquipamento"
+        );
+
 
     if (
-      dataPagamento.getFullYear() === agora.getFullYear() &&
-      dataPagamento.getMonth() === agora.getMonth() &&
-      dataPagamento.getDate() === agora.getDate()
+      listaFaturamentoEquipamentos
     ) {
-      faturamentoHoje += valor;
+
+      listaFaturamentoEquipamentos
+        .innerHTML = "";
+
+
+      (equipamentos || [])
+        .forEach(e => {
+
+          const totalEquipamento =
+            faturamentoEquipamentos[
+              e.id
+            ] || 0;
+
+
+          listaFaturamentoEquipamentos
+            .innerHTML += `
+
+              <div class="equipment">
+
+                <strong>
+                  ${
+                    e.nome ||
+                    "Aspirador VORTEX"
+                  }
+                </strong>
+
+                <div>
+                  Faturamento:
+                  ${
+                    Number(
+                      totalEquipamento
+                    )
+                    .toLocaleString(
+                      "pt-BR",
+                      {
+                        style: "currency",
+                        currency: "BRL"
+                      }
+                    )
+                  }
+                </div>
+
+              </div>
+
+            `;
+
+        });
+
     }
-  });
-const listaFaturamentoEquipamentos =
-  document.getElementById("faturamentoPorEquipamento");
-      listaFaturamentoEquipamentos.innerHTML = "";
-      equipamentos.forEach(e => {
-        const totalEquipamento = faturamentoEquipamentos[e.id] || 0;
-        listaFaturamentoEquipamentos.innerHTML += `
-        <div class="equipment">
-        <strong>${e.nome || "Aspirador VORTEX"}</strong>
-        <div>
-  Faturamento: ${Number(totalEquipamento).toLocaleString("pt-BR", {
-  style: "currency",
-  currency: "BRL"
-})}
-</div>
-</div>
-`;
-});
-  document.getElementById("faturamentoHoje").innerText =
-    faturamentoHoje.toLocaleString("pt-BR", {
-      style: "currency",
-      currency: "BRL"
-    });
 
-  document.getElementById("faturamentoMes").innerText =
-    faturamentoMes.toLocaleString("pt-BR", {
-      style: "currency",
-      currency: "BRL"
-    });
 
-  document.getElementById("totalPix").innerText =
-    totalPix.toLocaleString("pt-BR", {
-      style: "currency",
-      currency: "BRL"
-    });
-      document.getElementById("saldoLiquido").innerText =
-  saldoLiquido.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL"
-  });
-}
-    const idsEquipamentos = (equipamentos || []).map(e => e.id);
+    document
+      .getElementById(
+        "faturamentoHoje"
+      )
+      .innerText =
+        faturamentoHoje
+          .toLocaleString(
+            "pt-BR",
+            {
+              style: "currency",
+              currency: "BRL"
+            }
+          );
 
-let totalSessoesCliente = 0;
 
-if (idsEquipamentos.length > 0) {
-  const { data: sessoes, error: sessoesErro } =
-    await db
-      .from("sessoes")
-      .select("id,equipamento_id,pagamento_id,minutos_comprados,status,iniciado_em,finalizado_em")
-      .in("equipamento_id", idsEquipamentos);
+    document
+      .getElementById(
+        "faturamentoMes"
+      )
+      .innerText =
+        faturamentoMes
+          .toLocaleString(
+            "pt-BR",
+            {
+              style: "currency",
+              currency: "BRL"
+            }
+          );
 
-  if (!sessoesErro && sessoes) {
-    totalSessoesCliente = sessoes.length;
-    
-    const listaSessoes = document.getElementById("listaSessoes");
 
-if (listaSessoes) {
-  listaSessoes.innerHTML = "";
+    document
+      .getElementById(
+        "totalPix"
+      )
+      .innerText =
+        totalPix
+          .toLocaleString(
+            "pt-BR",
+            {
+              style: "currency",
+              currency: "BRL"
+            }
+          );
 
-  sessoes.forEach(s => {
-    const equipamento = equipamentos.find(
-      e => e.id === s.equipamento_id
-    );
 
-    const dataInicio = s.iniciado_em
-      ? new Date(s.iniciado_em).toLocaleString("pt-BR")
-      : "-";
-    const dataFim = s.finalizado_em
-  ? new Date(s.finalizado_em).toLocaleString("pt-BR")
-  : "--";
-const pagamentoSessao = pagamentos.find(p => p.id === s.pagamento_id);
-    listaSessoes.innerHTML += `
-      <div class="equipment">
-        <strong>${equipamento?.nome || "Aspirador VORTEX"}</strong>
+    document
+      .getElementById(
+        "saldoLiquido"
+      )
+      .innerText =
+        saldoLiquido
+          .toLocaleString(
+            "pt-BR",
+            {
+              style: "currency",
+              currency: "BRL"
+            }
+          );
 
-        <div>
-          Minutos: ${s.minutos_comprados || 0}
-        </div>
-<div>
-  Valor pago: ${Number(pagamentoSessao?.valor_bruto || 0).toLocaleString("pt-BR", {
-  style: "currency",
-  currency: "BRL"
-})}
-</div>
-        <div>
-          Início: ${dataInicio}
-        </div>
-        <div>
-  Fim: ${dataFim}
-</div>
 
-        <div>
-          Status: ${s.status || "-"}
-        </div>
-      </div>
-    `;
-  });
-}
-  }
-}
+    /* SESSÕES */
 
-document.getElementById("totalSessoes").innerText =
-  totalSessoesCliente;
+    const idsEquipamentos =
+      (equipamentos || [])
+        .map(
+          e => e.id
+        );
+
+
+    let totalSessoesCliente = 0;
+
+
+    if (
+      idsEquipamentos.length > 0
+    ) {
+
+      const {
+        data: sessoes,
+        error: sessoesErro
+      } =
+        await db
+          .from("sessoes")
+          .select(
+            "id,equipamento_id,pagamento_id,minutos_comprados,status,iniciado_em,finalizado_em"
+          )
+          .in(
+            "equipamento_id",
+            idsEquipamentos
+          );
+
+
+      if (
+        !sessoesErro &&
+        sessoes
+      ) {
+
+        totalSessoesCliente =
+          sessoes.length;
+
+
+        const listaSessoes =
+          document
+            .getElementById(
+              "listaSessoes"
+            );
+
+
+        if (
+          listaSessoes
+        ) {
+
+          listaSessoes
+            .innerHTML = "";
+
+
+          sessoes.forEach(s => {
+
+            const equipamento =
+              (equipamentos || [])
+                .find(
+                  e =>
+                    e.id ===
+                    s.equipamento_id
+                );
+
+
+            const dataInicio =
+              s.iniciado_em
+                ? new Date(
+                    s.iniciado_em
+                  )
+                  .toLocaleString(
+                    "pt-BR"
+                  )
+                : "-";
+
+
+            const dataFim =
+              s.finalizado_em
+                ? new Date(
+                    s.finalizado_em
+                  )
+                  .toLocaleString(
+                    "pt-BR"
+                  )
+                : "--";
+
+
+            const pagamentoSessao =
+              pagamentosCliente
+                .find(
+                  p =>
+                    p.id ===
+                    s.pagamento_id
+                );
+
+
+            listaSessoes
+              .innerHTML += `
+
+                <div class="equipment">
+
+                  <strong>
+                    ${
+                      equipamento?.nome ||
+                      "Aspirador VORTEX"
+                    }
+                  </strong>
+
+                  <div>
+                    Minutos:
+                    ${
+                      s.minutos_comprados ||
+                      0
+                    }
+                  </div>
+
+                  <div>
+                    Valor pago:
+                    ${
+                      Number(
+                        pagamentoSessao
+                          ?.valor_bruto ||
+                        0
+                      )
+                      .toLocaleString(
+                        "pt-BR",
+                        {
+                          style: "currency",
+                          currency: "BRL"
+                        }
+                      )
+                    }
+                  </div>
+
+                  <div>
+                    Início:
+                    ${dataInicio}
+                  </div>
+
+                  <div>
+                    Fim:
+                    ${dataFim}
+                  </div>
+
+                  <div>
+                    Status:
+                    ${
+                      s.status ||
+                      "-"
+                    }
+                  </div>
+
+                </div>
+
+              `;
+
+          });
+
+        }
+
+      }
+
+    }
+
+
+    document
+      .getElementById(
+        "totalSessoes"
+      )
+      .innerText =
+        totalSessoesCliente;
+
+
+    const dashSessoes =
+      document
+        .getElementById(
+          "dashSessoes"
+        );
+
+
+    if (
+      dashSessoes
+    ) {
+
+      dashSessoes.innerText =
+        totalSessoesCliente
+          .toLocaleString(
+            "pt-BR"
+          );
+
+    }
+
+
+    /* LISTA DE EQUIPAMENTOS */
 
     const lista =
-      document.getElementById("listaEquipamentos");
+      document
+        .getElementById(
+          "listaEquipamentos"
+        );
+
 
     lista.innerHTML = "";
 
+
     if (error) {
+
       lista.innerHTML =
         '<div class="message">Erro ao carregar equipamentos.</div>';
+
       return;
+
     }
 
-    if (!equipamentos || equipamentos.length === 0) {
+
+    if (
+      !equipamentos ||
+      equipamentos.length === 0
+    ) {
+
       lista.innerHTML =
         '<div class="message">Nenhum equipamento cadastrado.</div>';
-      return;
-    }
-    
-    const listaPagina = document.getElementById("listaEquipamentosPagina");
 
-if (listaPagina) {
-  listaPagina.innerHTML = "";
-}
+      atualizarDashboard(
+        [],
+        pagamentosCliente,
+        {},
+        faturamentoHoje,
+        faturamentoMes
+      );
+
+      return;
+
+    }
+
+
+    const listaPagina =
+      document
+        .getElementById(
+          "listaEquipamentosPagina"
+        );
+
+
+    if (
+      listaPagina
+    ) {
+
+      listaPagina.innerHTML =
+        "";
+
+    }
+
 
     equipamentos.forEach(e => {
 
       const classe =
         e.status === "online"
-        ? "online"
-        : "offline";
+          ? "online"
+          : "offline";
+
 
       lista.innerHTML += `
+
         <div class="equipment">
 
           <strong>
-           ${e.nome || "Aspirador VORTEX"}
+            ${
+              e.nome ||
+              "Aspirador VORTEX"
+            }
           </strong>
 
           <div>
-            Código: ${e.codigo}
+            Código:
+            ${e.codigo}
           </div>
 
           <div>
-            Valor: ${Number(e.preco_minuto).toLocaleString("pt-BR", {
-  style: "currency",
-  currency: "BRL"
-})} / minuto
+            Valor:
+            ${
+              Number(
+                e.preco_minuto
+              )
+              .toLocaleString(
+                "pt-BR",
+                {
+                  style: "currency",
+                  currency: "BRL"
+                }
+              )
+            }
+            / minuto
           </div>
 
           <div class="${classe}">
-            ${e.status === "online" ? "● ONLINE" : "● OFFLINE"}
+            ${
+              e.status === "online"
+                ? "● ONLINE"
+                : "● OFFLINE"
+            }
           </div>
 
         </div>
+
       `;
-      if (listaPagina) {
-  listaPagina.innerHTML += `
-    <div class="equipment">
 
-      <strong>
-        ${e.nome || "Aspirador VORTEX"}
-      </strong>
 
-      <div>
-        Código: ${e.codigo}
-      </div>
+      if (
+        listaPagina
+      ) {
 
-      <div>
-        Valor: ${Number(e.preco_minuto).toLocaleString("pt-BR", {
-  style: "currency",
-  currency: "BRL"
-})} / minuto
-      </div>
-<div>
-  Tempo configurado: ${e.tempo_minutos || 0} minutos
-</div>
+        listaPagina.innerHTML += `
 
-<div>
-  Valor do tempo: ${Number(e.valor_tempo || 0).toLocaleString("pt-BR", {
-  style: "currency",
-  currency: "BRL"
-})}
-</div>
-<div style="margin-top:15px;">
-  <label>Tempo desejado (minutos)</label>
-  <input
-    type="number"
-    id="tempo-${e.id}"
-    value="${e.tempo_minutos || 0}"
-    min="1"
-    style="width:100%; padding:12px; margin-top:6px; box-sizing:border-box; border-radius:8px;"
-  >
-</div>
+          <div class="equipment">
 
-<div style="margin-top:10px;">
-  <label>Valor do tempo (R$)</label>
-  <input
-    type="number"
-    id="valor-${e.id}"
-    value="${Number(e.valor_tempo || 0).toFixed(2)}"
-    min="0"
-    step="0.01"
-    style="width:100%; padding:12px; margin-top:6px; box-sizing:border-box; border-radius:8px;"
-  >
-</div>
-<button
-  type="button"
-  onclick="salvarConfiguracao('${e.id}')"
-  style="margin-top:15px; width:100%; padding:12px; background:#008cff; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;"
->
-  Salvar configuração
-</button>
-<div id="mensagem-${e.id}"></div>
-      <div class="${classe}">
-        ${e.status === "online" ? "● ONLINE" : "● OFFLINE"}
-      </div>
+            <strong>
+              ${
+                e.nome ||
+                "Aspirador VORTEX"
+              }
+            </strong>
 
-    </div>
-  `;
-}
+            <div>
+              Código:
+              ${e.codigo}
+            </div>
+
+            <div>
+              Valor:
+              ${
+                Number(
+                  e.preco_minuto
+                )
+                .toLocaleString(
+                  "pt-BR",
+                  {
+                    style: "currency",
+                    currency: "BRL"
+                  }
+                )
+              }
+              / minuto
+            </div>
+
+            <div>
+              Tempo configurado:
+              ${
+                e.tempo_minutos ||
+                0
+              }
+              minutos
+            </div>
+
+            <div>
+              Valor do tempo:
+              ${
+                Number(
+                  e.valor_tempo ||
+                  0
+                )
+                .toLocaleString(
+                  "pt-BR",
+                  {
+                    style: "currency",
+                    currency: "BRL"
+                  }
+                )
+              }
+            </div>
+
+            <div
+              style="margin-top:15px;"
+            >
+
+              <label>
+                Tempo desejado (minutos)
+              </label>
+
+              <input
+                type="number"
+                id="tempo-${e.id}"
+                value="${e.tempo_minutos || 0}"
+                min="1"
+              >
+
+            </div>
+
+            <div
+              style="margin-top:10px;"
+            >
+
+              <label>
+                Valor do tempo (R$)
+              </label>
+
+              <input
+                type="number"
+                id="valor-${e.id}"
+                value="${Number(e.valor_tempo || 0).toFixed(2)}"
+                min="0"
+                step="0.01"
+              >
+
+            </div>
+
+            <button
+              type="button"
+              onclick="salvarConfiguracao('${e.id}')"
+              style="
+                margin-top:15px;
+                width:100%;
+                padding:12px;
+              "
+            >
+              Salvar configuração
+            </button>
+
+            <div
+              id="mensagem-${e.id}"
+            ></div>
+
+            <div class="${classe}">
+              ${
+                e.status === "online"
+                  ? "● ONLINE"
+                  : "● OFFLINE"
+              }
+            </div>
+
+          </div>
+
+        `;
+
+      }
+
     });
-  }
-async function salvarConfiguracao(equipamentoId) {
-  const tempo = Number(document.getElementById(`tempo-${equipamentoId}`).value);
-  const valor = Number(document.getElementById(`valor-${equipamentoId}`).value);
 
-  if (tempo < 1 || valor < 0) {
-    alert("Informe um tempo e um valor válidos.");
-    return;
-  }
 
-  const { error } = await db
-    .from("equipamentos")
-    .update({
-      tempo_minutos: tempo,
-      valor_tempo: valor
-    })
-    .eq("id", equipamentoId);
+    /* ATUALIZA DASHBOARD */
 
-  if (error) {
-    alert("Erro ao salvar configuração.");
-    console.error(error);
-    return;
+    atualizarDashboard(
+      equipamentos,
+      pagamentosCliente,
+      faturamentoEquipamentos,
+      faturamentoHoje,
+      faturamentoMes
+    );
+
   }
 
-  
-  const mensagem = document.getElementById(`mensagem-${equipamentoId}`);
-  mensagem.innerHTML = "✓ Configuração salva com sucesso!";
-  mensagem.style.color = "#22c55e";
-  mensagem.style.marginTop = "10px";
-  setTimeout(() => {
-  mensagem.innerHTML = "";
-}, 3000);
-}
+
+  /* DASHBOARD */
+
+  let graficoEquipamentosVortex =
+    null;
+
+  let graficoDiasVortex =
+    null;
+
+
+  function moedaBR(valor) {
+
+    return Number(
+      valor || 0
+    )
+    .toLocaleString(
+      "pt-BR",
+      {
+        style: "currency",
+        currency: "BRL"
+      }
+    );
+
+  }
+
+
+  function atualizarDashboard(
+    equipamentos,
+    pagamentos,
+    faturamentoEquipamentos,
+    faturamentoHoje,
+    faturamentoMes
+  ) {
+
+    const dashHoje =
+      document
+        .getElementById(
+          "dashHoje"
+        );
+
+    const dashMes =
+      document
+        .getElementById(
+          "dashMes"
+        );
+
+    const dashOnline =
+      document
+        .getElementById(
+          "dashOnline"
+        );
+
+    const statusEquipamentos =
+      document
+        .getElementById(
+          "statusEquipamentos"
+        );
+
+    const ultimosPix =
+      document
+        .getElementById(
+          "ultimosPix"
+        );
+
+
+    if (
+      dashHoje
+    ) {
+
+      dashHoje.innerText =
+        moedaBR(
+          faturamentoHoje
+        );
+
+    }
+
+
+    if (
+      dashMes
+    ) {
+
+      dashMes.innerText =
+        moedaBR(
+          faturamentoMes
+        );
+
+    }
+
+
+    const online =
+      equipamentos
+        .filter(
+          e =>
+            String(
+              e.status
+            )
+            .toLowerCase() ===
+            "online"
+        )
+        .length;
+
+
+    if (
+      dashOnline
+    ) {
+
+      dashOnline.innerText =
+        `${online} de ${equipamentos.length}`;
+
+    }
+
+
+    /* STATUS DOS EQUIPAMENTOS */
+
+    if (
+      statusEquipamentos
+    ) {
+
+      statusEquipamentos
+        .innerHTML = "";
+
+
+      equipamentos
+        .forEach(e => {
+
+          const estaOnline =
+            String(
+              e.status
+            )
+            .toLowerCase() ===
+            "online";
+
+
+          const total =
+            faturamentoEquipamentos[
+              e.id
+            ] || 0;
+
+
+          statusEquipamentos
+            .innerHTML += `
+
+              <div class="status-row">
+
+                <div>
+
+                  <strong>
+                    ${
+                      e.nome ||
+                      "Aspirador VORTEX"
+                    }
+                  </strong>
+
+                  <span
+                    class="${
+                      estaOnline
+                        ? "status-online"
+                        : "status-offline"
+                    }"
+                  >
+                    ●
+                    ${
+                      estaOnline
+                        ? "Online"
+                        : "Offline"
+                    }
+                  </span>
+
+                </div>
+
+                <div class="status-money">
+
+                  <strong>
+                    ${
+                      moedaBR(
+                        total
+                      )
+                    }
+                  </strong>
+
+                  <small>
+                    Faturamento
+                  </small>
+
+                </div>
+
+              </div>
+
+            `;
+
+        });
+
+    }
+
+
+    /* ÚLTIMOS PIX */
+
+    if (
+      ultimosPix
+    ) {
+
+      const recentes =
+        [...pagamentos]
+          .sort(
+            (a, b) =>
+              new Date(
+                b.pago_em ||
+                b.criado_em
+              ) -
+              new Date(
+                a.pago_em ||
+                a.criado_em
+              )
+          )
+          .slice(
+            0,
+            5
+          );
+
+
+      if (
+        recentes.length
+      ) {
+
+        ultimosPix.innerHTML =
+          recentes
+            .map(p => {
+
+              const eq =
+                equipamentos
+                  .find(
+                    e =>
+                      e.id ===
+                      p.equipamento_id
+                  );
+
+
+              const data =
+                new Date(
+                  p.pago_em ||
+                  p.criado_em
+                );
+
+
+              return `
+
+                <div class="pix-row">
+
+                  <span>
+                    ${
+                      data
+                        .toLocaleDateString(
+                          "pt-BR",
+                          {
+                            day: "2-digit",
+                            month: "2-digit"
+                          }
+                        )
+                    }
+                  </span>
+
+                  <span>
+                    ${
+                      eq?.nome ||
+                      "VORTEX"
+                    }
+                  </span>
+
+                  <span>
+                    ${
+                      p.minutos ||
+                      0
+                    }
+                    min
+                  </span>
+
+                  <strong>
+                    ${
+                      moedaBR(
+                        p.valor_bruto
+                      )
+                    }
+                  </strong>
+
+                  <span
+                    class="status-online"
+                  >
+                    ● Pago
+                  </span>
+
+                </div>
+
+              `;
+
+            })
+            .join("");
+
+      } else {
+
+        ultimosPix.innerHTML =
+          '<div class="empty-dashboard">Nenhum PIX recebido.</div>';
+
+      }
+
+    }
+
+
+    /* CHART.JS */
+
+    if (
+      typeof Chart ===
+      "undefined"
+    ) {
+
+      return;
+
+    }
+
+
+    /* GRÁFICO POR EQUIPAMENTO */
+
+    const nomes =
+      equipamentos
+        .map(
+          e =>
+            e.nome ||
+            e.codigo ||
+            "VORTEX"
+        );
+
+
+    const valores =
+      equipamentos
+        .map(
+          e =>
+            faturamentoEquipamentos[
+              e.id
+            ] || 0
+        );
+
+
+    const canvasEquip =
+      document
+        .getElementById(
+          "graficoEquipamentos"
+        );
+
+
+    if (
+      canvasEquip
+    ) {
+
+      if (
+        graficoEquipamentosVortex
+      ) {
+
+        graficoEquipamentosVortex
+          .destroy();
+
+      }
+
+
+      graficoEquipamentosVortex =
+        new Chart(
+          canvasEquip,
+          {
+
+            type: "bar",
+
+            data: {
+
+              labels: nomes,
+
+              datasets: [
+
+                {
+
+                  data: valores,
+
+                  backgroundColor:
+                    "#118cff",
+
+                  borderColor:
+                    "#39a9ff",
+
+                  borderWidth: 1,
+
+                  borderRadius: 6
+
+                }
+
+              ]
+
+            },
+
+            options: {
+
+              responsive: true,
+
+              maintainAspectRatio:
+                false,
+
+              plugins: {
+
+                legend: {
+                  display: false
+                }
+
+              },
+
+              scales: {
+
+                x: {
+
+                  ticks: {
+                    color: "#dbeafe"
+                  },
+
+                  grid: {
+                    color:
+                      "rgba(255,255,255,.04)"
+                  }
+
+                },
+
+                y: {
+
+                  beginAtZero: true,
+
+                  ticks: {
+
+                    color: "#dbeafe",
+
+                    callback:
+                      value =>
+                        "R$ " +
+                        Number(value)
+                          .toLocaleString(
+                            "pt-BR"
+                          )
+
+                  },
+
+                  grid: {
+
+                    color:
+                      "rgba(255,255,255,.08)"
+
+                  }
+
+                }
+
+              }
+
+            }
+
+          }
+        );
+
+    }
+
+
+    /* FATURAMENTO POR DIA */
+
+    const porDia = {};
+
+
+    pagamentos
+      .forEach(p => {
+
+        const d =
+          new Date(
+            p.pago_em ||
+            p.criado_em
+          );
+
+
+        const chave =
+          `${d.getFullYear()}-${
+            String(
+              d.getMonth() + 1
+            )
+            .padStart(
+              2,
+              "0"
+            )
+          }-${
+            String(
+              d.getDate()
+            )
+            .padStart(
+              2,
+              "0"
+            )
+          }`;
+
+
+        porDia[chave] =
+          (
+            porDia[chave] ||
+            0
+          ) +
+          (
+            Number(
+              p.valor_bruto
+            ) ||
+            0
+          );
+
+      });
+
+
+    const dias =
+      Object
+        .keys(
+          porDia
+        )
+        .sort();
+
+
+    const canvasDias =
+      document
+        .getElementById(
+          "graficoDias"
+        );
+
+
+    if (
+      canvasDias
+    ) {
+
+      if (
+        graficoDiasVortex
+      ) {
+
+        graficoDiasVortex
+          .destroy();
+
+      }
+
+
+      graficoDiasVortex =
+        new Chart(
+          canvasDias,
+          {
+
+            type: "line",
+
+            data: {
+
+              labels:
+                dias
+                  .map(d => {
+
+                    const partes =
+                      d.split("-");
+
+                    return (
+                      `${partes[2]}/${partes[1]}`
+                    );
+
+                  }),
+
+              datasets: [
+
+                {
+
+                  data:
+                    dias
+                      .map(
+                        d =>
+                          porDia[d]
+                      ),
+
+                  borderColor:
+                    "#22a6ff",
+
+                  backgroundColor:
+                    "rgba(34,166,255,.16)",
+
+                  fill: true,
+
+                  tension: .35,
+
+                  pointRadius: 3,
+
+                  pointBackgroundColor:
+                    "#eaf6ff"
+
+                }
+
+              ]
+
+            },
+
+            options: {
+
+              responsive: true,
+
+              maintainAspectRatio:
+                false,
+
+              plugins: {
+
+                legend: {
+                  display: false
+                }
+
+              },
+
+              scales: {
+
+                x: {
+
+                  ticks: {
+                    color: "#dbeafe"
+                  },
+
+                  grid: {
+
+                    color:
+                      "rgba(255,255,255,.04)"
+
+                  }
+
+                },
+
+                y: {
+
+                  beginAtZero: true,
+
+                  ticks: {
+
+                    color: "#dbeafe",
+
+                    callback:
+                      value =>
+                        "R$ " +
+                        Number(value)
+                          .toLocaleString(
+                            "pt-BR"
+                          )
+
+                  },
+
+                  grid: {
+
+                    color:
+                      "rgba(255,255,255,.08)"
+
+                  }
+
+                }
+
+              }
+
+            }
+
+          }
+        );
+
+    }
+
+  }
+
+
+  /* SALVAR CONFIGURAÇÃO */
+
+  async function salvarConfiguracao(
+    equipamentoId
+  ) {
+
+    const tempo =
+      Number(
+        document
+          .getElementById(
+            `tempo-${equipamentoId}`
+          )
+          .value
+      );
+
+
+    const valor =
+      Number(
+        document
+          .getElementById(
+            `valor-${equipamentoId}`
+          )
+          .value
+      );
+
+
+    if (
+      tempo < 1 ||
+      valor < 0
+    ) {
+
+      alert(
+        "Informe um tempo e um valor válidos."
+      );
+
+      return;
+
+    }
+
+
+    const { error } =
+      await db
+        .from("equipamentos")
+        .update({
+
+          tempo_minutos:
+            tempo,
+
+          valor_tempo:
+            valor
+
+        })
+        .eq(
+          "id",
+          equipamentoId
+        );
+
+
+    if (
+      error
+    ) {
+
+      alert(
+        "Erro ao salvar configuração."
+      );
+
+      console.error(
+        error
+      );
+
+      return;
+
+    }
+
+
+    const mensagem =
+      document
+        .getElementById(
+          `mensagem-${equipamentoId}`
+        );
+
+
+    mensagem.innerHTML =
+      "✓ Configuração salva com sucesso!";
+
+
+    mensagem.style.color =
+      "#22c55e";
+
+
+    mensagem.style.marginTop =
+      "10px";
+
+
+    setTimeout(
+      () => {
+
+        mensagem.innerHTML =
+          "";
+
+      },
+      3000
+    );
+
+  }
+
+
+  /* SAIR */
+
   async function sair() {
-  await db.auth.signOut();
-  location.reload();
-}
-  // Verifica se o usuário já está conectado ao abrir o site
+
+    await db.auth
+      .signOut();
+
+    location.reload();
+
+  }
+
+
+  /* VERIFICAR LOGIN */
+
   async function verificarSessao() {
 
     const {
-      data: { session }
-    } = await db.auth.getSession();
+      data: {
+        session
+      }
+    } =
+      await db.auth
+        .getSession();
 
-    if (session) {
 
+    if (
+      session
+    ) {
 
-  abrirPainel();
+      abrirPainel();
+
     }
+
   }
+
 
   verificarSessao();
 
