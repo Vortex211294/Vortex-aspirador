@@ -563,6 +563,17 @@
       margin-top: 10px;
     }
 
+    /* CENTRAL / ADMIN */
+
+    .admin-only { display: none; }
+    body.admin-mode .admin-only { display: flex; }
+    body.admin-mode .cliente-only { display: none !important; }
+    .admin-badge {
+      display: inline-block; padding: 5px 9px; border-radius: 20px;
+      background: rgba(22,140,255,.16); color: #6fc0ff; font-size: 12px;
+      margin-top: 6px; border: 1px solid #1760a0;
+    }
+
     /* RESPONSIVO */
 
     @media (max-width: 1100px) {
@@ -847,6 +858,15 @@
         </button>
 
         <button
+          class="admin-only"
+          data-page="Clientes"
+          onclick="abrirPagina('Clientes')"
+        >
+          <span class="menu-icon">♟</span>
+          <span>Clientes</span>
+        </button>
+
+        <button
           data-page="Equipamentos"
           onclick="abrirPagina('Equipamentos')"
         >
@@ -879,6 +899,7 @@
         </button>
 
         <button
+          class="cliente-only"
           data-page="Mensalidade"
           onclick="abrirPagina('Mensalidade')"
         >
@@ -944,7 +965,7 @@
             Meu VORTEX
           </strong>
 
-          <div class="info">
+          <div class="info" id="tipoAcessoTopo">
             Cliente
           </div>
         </div>
@@ -1164,6 +1185,20 @@
 
         </div>
 
+      </div>
+
+      <!-- CENTRAL / CLIENTES -->
+
+      <div
+        id="paginaClientes"
+        class="paginaVortex hidden"
+      >
+        <div class="card">
+          <h2>Central VORTEX — Clientes</h2>
+          <p class="info">Clientes cadastrados na plataforma.</p>
+          <div id="resumoCentral" class="equipment"></div>
+          <div id="listaClientesAdmin"></div>
+        </div>
       </div>
 
       <!-- EQUIPAMENTOS -->
@@ -1390,7 +1425,7 @@
 
         <div class="card">
 
-          <h2>
+          <h2 id="tituloConta">
             Minha Conta
           </h2>
 
@@ -1488,6 +1523,10 @@
       SUPABASE_URL,
       SUPABASE_KEY
     );
+
+
+  let usuarioEhAdmin = false;
+  let clienteLogado = null;
 
 
   function abrirPagina(pagina) {
@@ -1742,6 +1781,28 @@
     }
 
 
+    clienteLogado = cliente;
+    usuarioEhAdmin =
+      String(cliente.tipo_usuario || "cliente").toLowerCase() === "admin";
+
+    document.body.classList.toggle("admin-mode", usuarioEhAdmin);
+
+    const tipoAcessoTopo = document.getElementById("tipoAcessoTopo");
+    if (tipoAcessoTopo) {
+      tipoAcessoTopo.innerText = usuarioEhAdmin ? "Administrador" : "Cliente";
+    }
+
+    const tituloInicio = document.querySelector("#paginaInicio .page-title");
+    const subtituloInicio = document.querySelector("#paginaInicio .page-subtitle");
+    if (usuarioEhAdmin) {
+      const tituloConta = document.getElementById("tituloConta");
+      if (tituloConta) tituloConta.innerText = "Conta da Central";
+      if (tituloInicio) tituloInicio.innerText = "Central VORTEX";
+      if (subtituloInicio) subtituloInicio.innerText =
+        "Visão geral de clientes, equipamentos, pagamentos e sessões.";
+    }
+
+
     document
       .querySelector(
         ".container > .logo"
@@ -1806,6 +1867,46 @@
       )
       .innerText =
         cliente.telefone || "-";
+
+
+    /* CENTRAL / ADMIN */
+
+    if (usuarioEhAdmin) {
+      const { data: clientesAdmin, error: clientesAdminErro } =
+        await db
+          .from("clientes")
+          .select("id,nome,telefone,mensalidade,tipo_usuario,criado_em")
+          .order("criado_em", { ascending: false });
+
+      const listaClientesAdmin = document.getElementById("listaClientesAdmin");
+      const resumoCentral = document.getElementById("resumoCentral");
+
+      if (clientesAdminErro) {
+        if (listaClientesAdmin) {
+          listaClientesAdmin.innerHTML =
+            '<div class="message">A conta foi reconhecida como ADMIN, mas o Supabase ainda não liberou a leitura administrativa dos clientes.</div>';
+        }
+        console.error(clientesAdminErro);
+      } else {
+        const clientesVisiveis = clientesAdmin || [];
+        if (resumoCentral) {
+          resumoCentral.innerHTML =
+            `<strong>${clientesVisiveis.length}</strong> cliente(s) visível(is) para a Central.`;
+        }
+        if (listaClientesAdmin) {
+          listaClientesAdmin.innerHTML = clientesVisiveis.length
+            ? clientesVisiveis.map(c => `
+                <div class="equipment">
+                  <strong>${c.nome || "Cliente VORTEX"}</strong>
+                  <div>Telefone: ${c.telefone || "-"}</div>
+                  <div>Mensalidade: ${Number(c.mensalidade || 50).toLocaleString("pt-BR", {style:"currency", currency:"BRL"})}</div>
+                  <div class="admin-badge">${String(c.tipo_usuario || "cliente").toUpperCase()}</div>
+                </div>
+              `).join("")
+            : '<div class="message">Nenhum cliente encontrado.</div>';
+        }
+      }
+    }
 
 
     /* MENSALIDADE */
@@ -1907,38 +2008,41 @@
 
     /* EQUIPAMENTOS */
 
+    let consultaEquipamentos =
+      db
+        .from("equipamentos")
+        .select(
+          "id,codigo,nome,preco_minuto,status,tempo_minutos,valor_tempo,cliente_id"
+        );
+
+    if (!usuarioEhAdmin) {
+      consultaEquipamentos =
+        consultaEquipamentos.eq("cliente_id", cliente.id);
+    }
+
     const {
       data: equipamentos,
       error
-    } =
-      await db
-        .from("equipamentos")
-        .select(
-          "id,codigo,nome,preco_minuto,status,tempo_minutos,valor_tempo"
-        )
-        .eq(
-          "cliente_id",
-          cliente.id
-        );
+    } = await consultaEquipamentos;
 
 
     /* PAGAMENTOS */
 
+    let consultaPagamentos =
+      db
+        .from("pagamentos")
+        .select("*")
+        .eq("status", "PAID");
+
+    if (!usuarioEhAdmin) {
+      consultaPagamentos =
+        consultaPagamentos.eq("cliente_id", cliente.id);
+    }
+
     const {
       data: pagamentos,
       error: pagamentosErro
-    } =
-      await db
-        .from("pagamentos")
-        .select("*")
-        .eq(
-          "cliente_id",
-          cliente.id
-        )
-        .eq(
-          "status",
-          "PAID"
-        );
+    } = await consultaPagamentos;
 
 
     let pagamentosCliente =
