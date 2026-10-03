@@ -551,9 +551,10 @@ if (listaPix) {
     if (listaPix)
     {console.log("PIX ENCONTRADO:", p);
      
-  const comissao = Number(p.comissao_valor) || 0;
+  const percentual = Number(p.comissao_percentual) || 2.99;
+const comissao = valor * (percentual / 100);
   const valorCliente = Number(p.valor_cliente) || 0;
-  const percentual = Number(p.comissao_percentual) || 0;
+  
 
   listaPix.innerHTML += `
     <div class="equipment">
