@@ -787,6 +787,7 @@ if (listaPagina) {
 >
   Salvar configuração
 </button>
+<div id="mensagem-${e.id}"></div>
       <div class="${classe}">
         ${e.status === "online" ? "● ONLINE" : "● OFFLINE"}
       </div>
@@ -819,8 +820,14 @@ async function salvarConfiguracao(equipamentoId) {
     return;
   }
 
-  alert("Configuração salva com sucesso!");
-  await abrirPainel();
+  
+  const mensagem = document.getElementById(`mensagem-${equipamentoId}`);
+  mensagem.innerHTML = "✓ Configuração salva com sucesso!";
+  mensagem.style.color = "#22c55e";
+  mensagem.style.marginTop = "10px";
+  setTimeout(() => {
+  mensagem.innerHTML = "";
+}, 3000);
 }
   async function sair() {
   await db.auth.signOut();
