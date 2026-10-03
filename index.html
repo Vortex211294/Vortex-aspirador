@@ -313,6 +313,7 @@
       <div class="value" id="mensalidadeValor">R$ 50,00</div>
       <div class="info" id="mensalidadeVencimento">Vencimento: --</div>
       <div class="info" id="mensalidadeStatus">Status: --</div>
+      <div class="info" id="mensalidadePagoEm"></div>
       <p class="info">Plano mensal VORTEX ASPIRADOR.</p>
     </div>
   </div>
@@ -546,6 +547,14 @@ const { data: mensalidade, error: mensalidadeErro } =
 }
       document.getElementById("mensalidadeStatus").innerText =
   `Status: ${mensalidade.status || "--"}`;
+      const pagoEm = document.getElementById("mensalidadePagoEm");
+
+if (mensalidade.pago_em) {
+  pagoEm.innerText =
+    `Pago em: ${new Date(mensalidade.pago_em).toLocaleString("pt-BR")}`;
+} else {
+  pagoEm.innerText = "";
+}
 }
     const { data: equipamentos, error } =
       await db
