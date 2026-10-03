@@ -560,12 +560,17 @@ if (listaPix) {
   const percentual = Number(p.comissao_percentual) || 2.99;
 const comissao = valor * (percentual / 100);
   const valorCliente = Number(p.valor_cliente) || 0;
-  
+  const equipamentoPix = equipamentos.find(e => e.id === p.equipamento_id);
 
   listaPix.innerHTML += `
     <div class="equipment">
       <strong>PIX recebido</strong>
-
+<div>
+  Equipamento: ${equipamentoPix ? equipamentoPix.nome : "Não identificado"}
+</div>
+<div>
+  Minutos: ${p.minutos || 0}
+</div>
       <div>
         Valor pago: R$ ${valor.toFixed(2)}
       </div>
