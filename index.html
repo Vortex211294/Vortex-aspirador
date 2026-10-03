@@ -284,6 +284,8 @@
   <div class="info">Saldo líquido do cliente</div>
   <strong id="saldoLiquido">R$ 0,00</strong>
 </div>
+  <h3>Faturamento por equipamento</h3>
+<div id="faturamentoPorEquipamento"></div>
   </div>
 </div>
   <!-- SESSÕES -->
@@ -546,8 +548,14 @@ const listaPix = document.getElementById("listaPix");
 if (listaPix) {
   listaPix.innerHTML = "";
 }
+      const faturamentoEquipamentos = {};
   pagamentos.forEach(p => {
     const valor = Number(p.valor_bruto) || 0;
+    const equipamentoId = p.equipamento_id;
+    if (equipamentoId) {
+      faturamentoEquipamentos[equipamentoId] =
+        (faturamentoEquipamentos[equipamentoId] || 0) + valor;
+    }
     const dataPagamento = new Date(p.pago_em || p.criado_em);
 
     totalPix += valor;
@@ -613,7 +621,20 @@ const comissao = valor * (percentual / 100);
       faturamentoHoje += valor;
     }
   });
-
+const listaFaturamentoEquipamentos =
+  document.getElementById("faturamentoPorEquipamento");
+      listaFaturamentoEquipamentos.innerHTML = "";
+      equipamentos.forEach(e => {
+        const totalEquipamento = faturamentoEquipamentos[e.id] || 0;
+        listaFaturamentoEquipamentos.innerHTML += `
+        <div class="equipment">
+        <strong>${e.nome || "Aspirador VORTEX"}</strong>
+        <div>
+  Faturamento: R$ ${totalEquipamento.toFixed(2)}
+</div>
+</div>
+`;
+});
   document.getElementById("faturamentoHoje").innerText =
     faturamentoHoje.toLocaleString("pt-BR", {
       style: "currency",
