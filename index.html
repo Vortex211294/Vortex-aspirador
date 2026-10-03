@@ -527,7 +527,7 @@ document.getElementById("contaTelefone").innerText =
     const { data: pagamentos, error: pagamentosErro } =
   await db
     .from("pagamentos")
-    .select("valor_bruto,comissao_percentual,comissao_valor,valor_cliente,status,criado_em,pago_em")
+    .select("*")
     .eq("cliente_id", cliente.id)
     .eq("status", "PAID");
     
