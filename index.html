@@ -551,7 +551,9 @@ if (listaPix) {
     const dataPagamento = new Date(p.pago_em || p.criado_em);
 
     totalPix += valor;
-    saldoLiquido += Number(p.valor_cliente) || 0;
+    if (p.repassado === false) {
+  saldoLiquido += Number(p.valor_cliente) || 0;
+}
     if (listaPix)
     {console.log("PIX ENCONTRADO:", p);
      
