@@ -685,7 +685,10 @@ if (listaSessoes) {
     const dataInicio = s.iniciado_em
       ? new Date(s.iniciado_em).toLocaleString("pt-BR")
       : "-";
-
+    const dataFim = s.finalizado_em
+  ? new Date(s.finalizado_em).toLocaleString("pt-BR")
+  : "--";
+const pagamentoSessao = pagamentos.find(p => p.id === s.pagamento_id);
     listaSessoes.innerHTML += `
       <div class="equipment">
         <strong>${equipamento?.nome || "Aspirador VORTEX"}</strong>
@@ -693,10 +696,15 @@ if (listaSessoes) {
         <div>
           Minutos: ${s.minutos_comprados || 0}
         </div>
-
+<div>
+  Valor pago: R$ ${Number(pagamentoSessao?.valor_bruto || 0).toFixed(2)}
+</div>
         <div>
           Início: ${dataInicio}
         </div>
+        <div>
+  Fim: ${dataFim}
+</div>
 
         <div>
           Status: ${s.status || "-"}
