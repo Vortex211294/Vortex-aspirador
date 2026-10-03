@@ -280,7 +280,10 @@
       <div class="info">Recebido via PIX</div>
       <strong id="totalPix">R$ 0,00</strong>
     </div>
-
+   <div class="equipment">
+  <div class="info">Saldo líquido do cliente</div>
+  <strong id="saldoLiquido">R$ 0,00</strong>
+</div>
   </div>
 </div>
   <!-- SESSÕES -->
@@ -537,6 +540,7 @@ document.getElementById("contaTelefone").innerText =
   let faturamentoHoje = 0;
   let faturamentoMes = 0;
   let totalPix = 0;
+  let saldoLiquido = 0;
 const listaPix = document.getElementById("listaPix");
 
 if (listaPix) {
@@ -547,7 +551,7 @@ if (listaPix) {
     const dataPagamento = new Date(p.pago_em || p.criado_em);
 
     totalPix += valor;
-    
+    saldoLiquido += Number(p.valor_cliente) || 0;
     if (listaPix)
     {console.log("PIX ENCONTRADO:", p);
      
@@ -620,6 +624,11 @@ const comissao = valor * (percentual / 100);
       style: "currency",
       currency: "BRL"
     });
+      document.getElementById("saldoLiquido").innerText =
+  saldoLiquido.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL"
+  });
 }
     const idsEquipamentos = (equipamentos || []).map(e => e.id);
 
