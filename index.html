@@ -574,6 +574,60 @@
       margin-top: 6px; border: 1px solid #1760a0;
     }
 
+    /* DETALHE DO CLIENTE / CONTROLE REMOTO */
+
+    .cliente-admin-card {
+      cursor: pointer;
+      transition: transform .15s ease, border-color .15s ease;
+    }
+
+    .cliente-admin-card:hover {
+      transform: translateY(-2px);
+      border-color: #2498ff;
+    }
+
+    .vortex-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
+    .vortex-actions button {
+      padding: 11px 14px;
+    }
+
+    .btn-voltar-vortex {
+      width: auto;
+      padding: 10px 14px;
+      margin-bottom: 16px;
+      background: transparent;
+      border: 1px solid #168cff;
+    }
+
+    .cliente-detalhe-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin: 16px 0;
+    }
+
+    .cliente-detalhe-grid .equipment {
+      margin-top: 0;
+    }
+
+    @media (max-width: 900px) {
+      .cliente-detalhe-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 520px) {
+      .cliente-detalhe-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
     /* RESPONSIVO */
 
     @media (max-width: 1100px) {
@@ -1202,6 +1256,37 @@ class="admin-only"
         </div>
       </div>
 
+      <!-- DETALHE DO CLIENTE - CENTRAL -->
+
+      <div
+        id="paginaClienteDetalhe"
+        class="paginaVortex hidden"
+      >
+        <div class="card">
+          <button
+            type="button"
+            class="btn-voltar-vortex"
+            onclick="voltarParaClientes()"
+          >
+            ← Voltar para Clientes
+          </button>
+
+          <h2 id="detalheClienteNome">Cliente VORTEX</h2>
+          <p class="info" id="detalheClienteInfo">Carregando dados do cliente...</p>
+
+          <div id="detalheClienteResumo" class="cliente-detalhe-grid"></div>
+
+          <h3>Equipamentos</h3>
+          <div id="detalheClienteEquipamentos"></div>
+
+          <h3 style="margin-top:24px;">Últimos PIX</h3>
+          <div id="detalheClientePix"></div>
+
+          <h3 style="margin-top:24px;">Sessões</h3>
+          <div id="detalheClienteSessoes"></div>
+        </div>
+      </div>
+
       <!-- EQUIPAMENTOS -->
 
       <div
@@ -1528,10 +1613,11 @@ class="admin-only"
 
   let usuarioEhAdmin = false;
   let clienteLogado = null;
+  let clienteAdminSelecionado = null;
 
 
   function abrirPagina(pagina) {
-    if (pagina === "Clientes" && !usuarioEhAdmin) {
+    if ((pagina === "Clientes" || pagina === "ClienteDetalhe") && !usuarioEhAdmin) {
       pagina = "Inicio";
     }
     const paginas =
@@ -1909,7 +1995,11 @@ if (btnClientesAdmin) {
         if (listaClientesAdmin) {
           listaClientesAdmin.innerHTML = clientesVisiveis.length
             ? clientesVisiveis.map(c => `
-                <div class="equipment">
+                <div class="equipment cliente-admin-card"
+                     role="button"
+                     tabindex="0"
+                     onclick="abrirClienteAdmin('${c.id}')"
+                     onkeydown="if(event.key === 'Enter') abrirClienteAdmin('${c.id}')">
                   <strong>${c.nome || "Cliente VORTEX"}</strong>
                   <div>Telefone: ${c.telefone || "-"}</div>
                   <div>Mensalidade: ${Number(c.mensalidade || 50).toLocaleString("pt-BR", {style:"currency", currency:"BRL"})}</div>
@@ -2025,7 +2115,7 @@ if (btnClientesAdmin) {
       db
         .from("equipamentos")
         .select(
-          "id,codigo,nome,preco_minuto,status,tempo_minutos,valor_tempo,cliente_id"
+          "id,codigo,nome,preco_minuto,status,tempo_minutos,valor_tempo,cliente_id,comando,tempo_acionamento_segundos,comando_criado_em,comando_recebido_em,acionamento_finalizado_em"
         );
 
     if (!usuarioEhAdmin) {
@@ -2849,6 +2939,23 @@ if (btnClientesAdmin) {
               Salvar configuração
             </button>
 
+            <button
+              type="button"
+              class="secondary"
+              onclick="acionarEquipamento('${e.id}', '${String(e.nome || "Aspirador VORTEX").replace(/'/g, "\\'")}')"
+              style="
+                margin-top:10px;
+                width:100%;
+                padding:12px;
+              "
+            >
+              Acionar remotamente
+            </button>
+
+            <div class="info" style="margin-top:10px;">
+              Comando: ${e.comando || "aguardando"}
+            </div>
+
             <div
               id="mensagem-${e.id}"
             ></div>
@@ -3547,6 +3654,237 @@ if (btnClientesAdmin) {
 
   }
 
+
+  /* CENTRAL - DETALHE INDIVIDUAL DO CLIENTE */
+
+  function escaparHtml(valor) {
+    return String(valor ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function voltarParaClientes() {
+    clienteAdminSelecionado = null;
+    abrirPagina("Clientes");
+  }
+
+  async function abrirClienteAdmin(clienteId) {
+    if (!usuarioEhAdmin) return;
+
+    clienteAdminSelecionado = clienteId;
+    abrirPagina("ClienteDetalhe");
+
+    const nomeEl = document.getElementById("detalheClienteNome");
+    const infoEl = document.getElementById("detalheClienteInfo");
+    const resumoEl = document.getElementById("detalheClienteResumo");
+    const equipamentosEl = document.getElementById("detalheClienteEquipamentos");
+    const pixEl = document.getElementById("detalheClientePix");
+    const sessoesEl = document.getElementById("detalheClienteSessoes");
+
+    nomeEl.innerText = "Cliente VORTEX";
+    infoEl.innerText = "Carregando dados do cliente...";
+    resumoEl.innerHTML = "";
+    equipamentosEl.innerHTML = '<div class="message">Carregando equipamentos...</div>';
+    pixEl.innerHTML = "";
+    sessoesEl.innerHTML = "";
+
+    const [clienteResp, equipamentosResp, pagamentosResp, mensalidadeResp] = await Promise.all([
+      db.from("clientes")
+        .select("id,nome,telefone,mensalidade,tipo_usuario,ativo,criado_em")
+        .eq("id", clienteId)
+        .single(),
+      db.from("equipamentos")
+        .select("id,codigo,nome,preco_minuto,status,tempo_minutos,valor_tempo,cliente_id,comando,tempo_acionamento_segundos,comando_criado_em,comando_recebido_em,acionamento_finalizado_em")
+        .eq("cliente_id", clienteId),
+      db.from("pagamentos")
+        .select("*")
+        .eq("cliente_id", clienteId)
+        .eq("status", "PAID")
+        .order("criado_em", { ascending: false }),
+      db.from("mensalidades")
+        .select("*")
+        .eq("cliente_id", clienteId)
+        .order("vencimento", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+    ]);
+
+    if (clienteResp.error || !clienteResp.data) {
+      console.error(clienteResp.error);
+      infoEl.innerText = "Não foi possível carregar este cliente.";
+      equipamentosEl.innerHTML = "";
+      return;
+    }
+
+    const cliente = clienteResp.data;
+    const equipamentos = equipamentosResp.data || [];
+    const pagamentos = pagamentosResp.data || [];
+    const mensalidade = mensalidadeResp.data || null;
+    const agora = new Date();
+
+    const faturamentoHoje = pagamentos.reduce((total, p) => {
+      const d = new Date(p.pago_em || p.criado_em);
+      const hoje = d.getFullYear() === agora.getFullYear() &&
+        d.getMonth() === agora.getMonth() && d.getDate() === agora.getDate();
+      return total + (hoje ? Number(p.valor_bruto || 0) : 0);
+    }, 0);
+
+    const faturamentoMes = pagamentos.reduce((total, p) => {
+      const d = new Date(p.pago_em || p.criado_em);
+      const mesmoMes = d.getFullYear() === agora.getFullYear() && d.getMonth() === agora.getMonth();
+      return total + (mesmoMes ? Number(p.valor_bruto || 0) : 0);
+    }, 0);
+
+    const saldoDisponivel = pagamentos.reduce((total, p) => {
+      if (p.repassado === false) return total + Number(p.valor_cliente || 0);
+      return total;
+    }, 0);
+
+    const online = equipamentos.filter(e => String(e.status || "").toLowerCase() === "online").length;
+    const ids = equipamentos.map(e => e.id);
+    let sessoes = [];
+
+    if (ids.length) {
+      const sessoesResp = await db.from("sessoes")
+        .select("id,equipamento_id,pagamento_id,minutos_comprados,status,iniciado_em,finalizado_em,criado_em")
+        .in("equipamento_id", ids)
+        .order("criado_em", { ascending: false });
+      if (!sessoesResp.error) sessoes = sessoesResp.data || [];
+    }
+
+    nomeEl.innerText = cliente.nome || "Cliente VORTEX";
+    infoEl.innerText = `Telefone: ${cliente.telefone || "-"} • ${cliente.ativo === false ? "Inativo" : "Ativo"}`;
+
+    resumoEl.innerHTML = `
+      <div class="equipment"><div class="info">Faturamento hoje</div><strong>${moedaBR(faturamentoHoje)}</strong></div>
+      <div class="equipment"><div class="info">Faturamento do mês</div><strong>${moedaBR(faturamentoMes)}</strong></div>
+      <div class="equipment"><div class="info">Sessões</div><strong>${sessoes.length}</strong></div>
+      <div class="equipment"><div class="info">Equipamentos online</div><strong>${online} de ${equipamentos.length}</strong></div>
+      <div class="equipment"><div class="info">Saldo disponível</div><strong>${moedaBR(saldoDisponivel)}</strong></div>
+      <div class="equipment"><div class="info">Mensalidade</div><strong>${moedaBR(cliente.mensalidade || 50)}</strong></div>
+      <div class="equipment"><div class="info">Status mensalidade</div><strong>${escaparHtml(mensalidade?.status || "--")}</strong></div>
+    `;
+
+    if (equipamentosResp.error) {
+      equipamentosEl.innerHTML = '<div class="message">Não foi possível carregar os equipamentos.</div>';
+    } else if (!equipamentos.length) {
+      equipamentosEl.innerHTML = '<div class="message">Nenhum equipamento cadastrado para este cliente.</div>';
+    } else {
+      equipamentosEl.innerHTML = equipamentos.map(e => {
+        const classe = String(e.status || "").toLowerCase() === "online" ? "online" : "offline";
+        return `
+          <div class="equipment">
+            <strong>${escaparHtml(e.nome || "Aspirador VORTEX")}</strong>
+            <div>Código: ${escaparHtml(e.codigo || "-")}</div>
+            <div class="${classe}">${classe === "online" ? "● ONLINE" : "● OFFLINE"}</div>
+            <div class="info" style="margin-top:8px;">Comando: ${escaparHtml(e.comando || "aguardando")}</div>
+
+            <div style="margin-top:15px;">
+              <label>Tempo desejado (minutos)</label>
+              <input type="number" id="admin-tempo-${e.id}" value="${Number(e.tempo_minutos || 1)}" min="1">
+            </div>
+
+            <div style="margin-top:10px;">
+              <label>Valor do tempo (R$)</label>
+              <input type="number" id="admin-valor-${e.id}" value="${Number(e.valor_tempo || 0).toFixed(2)}" min="0" step="0.01">
+            </div>
+
+            <div class="vortex-actions">
+              <button type="button" onclick="salvarConfiguracaoAdmin('${e.id}')">Salvar configuração</button>
+              <button type="button" class="secondary" onclick="acionarEquipamento('${e.id}', '${String(e.nome || "Aspirador VORTEX").replace(/'/g, "\\'")}')">Acionar remotamente</button>
+            </div>
+            <div id="admin-mensagem-${e.id}" class="message"></div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    pixEl.innerHTML = pagamentos.length
+      ? pagamentos.slice(0, 20).map(p => {
+          const eq = equipamentos.find(e => e.id === p.equipamento_id);
+          const data = new Date(p.pago_em || p.criado_em).toLocaleString("pt-BR");
+          return `<div class="equipment"><strong>PIX recebido</strong><div>Equipamento: ${escaparHtml(eq?.nome || "Não identificado")}</div><div>Valor: ${moedaBR(p.valor_bruto)}</div><div>Minutos: ${p.minutos || 0}</div><div>Data: ${data}</div><div class="online">● PAGO</div></div>`;
+        }).join("")
+      : '<div class="message">Nenhum PIX recebido por este cliente.</div>';
+
+    pixEl.dataset.carregado = "1";
+
+    sessoesEl.innerHTML = sessoes.length
+      ? sessoes.slice(0, 30).map(sessao => {
+          const eq = equipamentos.find(e => e.id === sessao.equipamento_id);
+          return `<div class="equipment"><strong>${escaparHtml(eq?.nome || "Aspirador VORTEX")}</strong><div>Minutos: ${sessao.minutos_comprados || 0}</div><div>Status: ${escaparHtml(sessao.status || "-")}</div><div>Início: ${sessao.iniciado_em ? new Date(sessao.iniciado_em).toLocaleString("pt-BR") : "-"}</div><div>Fim: ${sessao.finalizado_em ? new Date(sessao.finalizado_em).toLocaleString("pt-BR") : "--"}</div></div>`;
+        }).join("")
+      : '<div class="message">Nenhuma sessão encontrada para este cliente.</div>';
+  }
+
+  async function salvarConfiguracaoAdmin(equipamentoId) {
+    if (!usuarioEhAdmin) return;
+
+    const tempo = Number(document.getElementById(`admin-tempo-${equipamentoId}`)?.value);
+    const valor = Number(document.getElementById(`admin-valor-${equipamentoId}`)?.value);
+    const mensagem = document.getElementById(`admin-mensagem-${equipamentoId}`);
+
+    if (tempo < 1 || valor < 0 || !Number.isFinite(tempo) || !Number.isFinite(valor)) {
+      alert("Informe um tempo e um valor válidos.");
+      return;
+    }
+
+    if (mensagem) mensagem.innerText = "Salvando...";
+
+    const { error } = await db.from("equipamentos")
+      .update({ tempo_minutos: tempo, valor_tempo: valor })
+      .eq("id", equipamentoId);
+
+    if (error) {
+      console.error(error);
+      if (mensagem) mensagem.innerText = "Supabase ainda não liberou esta alteração para a Central.";
+      return;
+    }
+
+    if (mensagem) {
+      mensagem.innerText = "✓ Configuração salva com sucesso!";
+      mensagem.style.color = "#22c55e";
+    }
+  }
+
+  async function acionarEquipamento(equipamentoId, nomeEquipamento) {
+    const minutosPadrao = 2;
+    const minutosTexto = prompt(`Acionar ${nomeEquipamento || "Aspirador VORTEX"} por quantos minutos?`, String(minutosPadrao));
+    if (minutosTexto === null) return;
+
+    const minutos = Number(minutosTexto);
+    if (!Number.isFinite(minutos) || minutos < 1 || minutos > 120) {
+      alert("Informe um tempo entre 1 e 120 minutos.");
+      return;
+    }
+
+    if (!confirm(`Acionar ${nomeEquipamento || "Aspirador VORTEX"} por ${minutos} minuto(s)?`)) return;
+
+    const { error } = await db.from("equipamentos")
+      .update({
+        comando: "ligar",
+        tempo_acionamento_segundos: Math.round(minutos * 60)
+      })
+      .eq("id", equipamentoId);
+
+    if (error) {
+      console.error(error);
+      alert("O comando não foi liberado pelo Supabase ainda. Vamos configurar essa permissão na próxima etapa.");
+      return;
+    }
+
+    alert("Comando enviado ao equipamento.");
+
+    if (usuarioEhAdmin && clienteAdminSelecionado) {
+      await abrirClienteAdmin(clienteAdminSelecionado);
+    } else {
+      await abrirPainel();
+      abrirPagina("Equipamentos");
+    }
+  }
 
   /* SALVAR CONFIGURAÇÃO */
 
