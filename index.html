@@ -3834,9 +3834,14 @@ if (btnClientesAdmin) {
 
     if (mensagem) mensagem.innerText = "Salvando...";
 
-    const { error } = await db.from("equipamentos")
-      .update({ tempo_minutos: tempo, valor_tempo: valor })
-      .eq("id", equipamentoId);
+  const { error } = await db.rpc(
+  "salvar_configuracao_equipamento",
+  {
+    p_equipamento_id: equipamentoId,
+    p_tempo_minutos: tempo,
+    p_valor_tempo: valor
+  }
+);
 
     if (error) {
       console.error(error);
