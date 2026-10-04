@@ -858,7 +858,8 @@
         </button>
 
         <button
-          class="admin-only"
+          id="btnClientesAdmin"
+class="admin-only"
           data-page="Clientes"
           onclick="abrirPagina('Clientes')"
         >
@@ -1786,6 +1787,12 @@
     clienteLogado = cliente;
     usuarioEhAdmin =
       String(cliente.tipo_usuario || "cliente").toLowerCase() === "admin";
+    
+    const btnClientesAdmin = document.getElementById("btnClientesAdmin");
+
+if (btnClientesAdmin) {
+  btnClientesAdmin.style.display = usuarioEhAdmin ? "flex" : "none";
+}
 
     document.body.classList.toggle("admin-mode", usuarioEhAdmin);
     
