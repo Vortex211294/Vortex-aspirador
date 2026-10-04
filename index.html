@@ -3850,9 +3850,13 @@ if (btnClientesAdmin) {
     }
 
     if (mensagem) {
-      mensagem.innerText = "✓ Configuração salva com sucesso!";
-      mensagem.style.color = "#22c55e";
-    }
+  mensagem.innerText = "✓ Configuração salva com sucesso!";
+  mensagem.style.color = "#22c55e";
+
+  setTimeout(() => {
+    mensagem.innerText = "";
+  }, 3000);
+}
   }
 
   let equipamentoAcionamentoId = null;
