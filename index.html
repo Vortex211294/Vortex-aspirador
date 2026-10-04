@@ -1530,7 +1530,9 @@
 
 
   function abrirPagina(pagina) {
-
+    if (pagina === "Clientes" && !usuarioEhAdmin) {
+      pagina = "Inicio";
+    }
     const paginas =
       document.querySelectorAll(
         ".paginaVortex"
