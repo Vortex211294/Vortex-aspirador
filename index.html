@@ -1788,6 +1788,10 @@
       String(cliente.tipo_usuario || "cliente").toLowerCase() === "admin";
 
     document.body.classList.toggle("admin-mode", usuarioEhAdmin);
+    
+    if (!usuarioEhAdmin) {
+  abrirPagina("Inicio");
+}
 
     const tipoAcessoTopo = document.getElementById("tipoAcessoTopo");
     if (tipoAcessoTopo) {
