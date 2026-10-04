@@ -3850,35 +3850,95 @@ if (btnClientesAdmin) {
     }
   }
 
-  async function acionarEquipamento(equipamentoId, nomeEquipamento) {
-    const minutosPadrao = 2;
-    const minutosTexto = prompt(`Acionar ${nomeEquipamento || "Aspirador VORTEX"} por quantos minutos?`, String(minutosPadrao));
-    if (minutosTexto === null) return;
+  let equipamentoAcionamentoId = null;
+let equipamentoAcionamentoNome = "";
 
-    const minutos = Number(minutosTexto);
-    if (!Number.isFinite(minutos) || minutos < 1 || minutos > 120) {
-      alert("Informe um tempo entre 1 e 120 minutos.");
-      return;
-    }
+function acionarEquipamento(equipamentoId, nomeEquipamento) {
+  equipamentoAcionamentoId = equipamentoId;
+  equipamentoAcionamentoNome =
+    nomeEquipamento || "Aspirador VORTEX";
 
-    if (!confirm(`Acionar ${nomeEquipamento || "Aspirador VORTEX"} por ${minutos} minuto(s)?`)) return;
+  const modal = document.getElementById("modalAcionamentoVortex");
+  const titulo = document.getElementById("nomeEquipamentoAcionamento");
+  const tempo = document.getElementById("tempoAcionamentoVortex");
+  const mensagem = document.getElementById("mensagemAcionamentoVortex");
 
-   const { error } = await db.rpc(
-  "acionar_equipamento_remoto",
-  {
-    p_equipamento_id: equipamentoId,
-    p_tempo_segundos: Math.round(minutos * 60)
-  }
-);
+  titulo.textContent = equipamentoAcionamentoNome;
+  tempo.value = "2";
+  mensagem.textContent = "";
 
-   if (error) {
-  console.error(error);
-  alert("Não foi possível acionar o equipamento: " + error.message);
-  return;
+  modal.style.display = "flex";
 }
-    
 
-    alert("Comando enviado ao equipamento.");
+function fecharModalAcionamento() {
+  document.getElementById(
+    "modalAcionamentoVortex"
+  ).style.display = "none";
+
+  equipamentoAcionamentoId = null;
+  equipamentoAcionamentoNome = "";
+}
+
+async function confirmarAcionamentoVortex() {
+  const minutos = Number(
+    document.getElementById("tempoAcionamentoVortex").value
+  );
+
+  const mensagem = document.getElementById(
+    "mensagemAcionamentoVortex"
+  );
+
+  const botao = document.getElementById(
+    "btnConfirmarAcionamentoVortex"
+  );
+
+  if (!Number.isFinite(minutos) || minutos < 1 || minutos > 120) {
+    mensagem.textContent =
+      "Informe um tempo entre 1 e 120 minutos.";
+    return;
+  }
+
+  if (!equipamentoAcionamentoId) {
+    mensagem.textContent =
+      "Equipamento não encontrado.";
+    return;
+  }
+
+  botao.disabled = true;
+  botao.textContent = "Enviando...";
+  mensagem.textContent =
+    "Enviando comando ao equipamento...";
+
+  const { error } = await db.rpc(
+    "acionar_equipamento_remoto",
+    {
+      p_equipamento_id: equipamentoAcionamentoId,
+      p_tempo_segundos: Math.round(minutos * 60)
+    }
+  );
+
+  if (error) {
+    console.error(error);
+
+    mensagem.textContent =
+      "Não foi possível acionar o equipamento: " +
+      error.message;
+
+    botao.disabled = false;
+    botao.textContent = "Acionar equipamento";
+    return;
+  }
+
+  mensagem.textContent =
+    "✓ Comando enviado ao equipamento.";
+
+  botao.textContent = "Comando enviado";
+
+  setTimeout(async () => {
+    fecharModalAcionamento();
+
+    botao.disabled = false;
+    botao.textContent = "Acionar equipamento";
 
     if (usuarioEhAdmin && clienteAdminSelecionado) {
       await abrirClienteAdmin(clienteAdminSelecionado);
@@ -3886,7 +3946,8 @@ if (btnClientesAdmin) {
       await abrirPainel();
       abrirPagina("Equipamentos");
     }
-  }
+  }, 1200);
+}
 
   /* SALVAR CONFIGURAÇÃO */
 
@@ -4026,6 +4087,148 @@ if (btnClientesAdmin) {
   verificarSessao();
 
 </script>
+<!-- MODAL ACIONAMENTO REMOTO VORTEX -->
+<div
+  id="modalAcionamentoVortex"
+  style="
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.72);
+    z-index:99999;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  "
+>
+  <div
+    style="
+      width:100%;
+      max-width:420px;
+      background:#07111f;
+      border:1px solid #1e3a5f;
+      border-radius:16px;
+      padding:24px;
+      box-shadow:0 20px 60px rgba(0,0,0,0.55);
+    "
+  >
 
+    <div
+      style="
+        font-size:20px;
+        font-weight:700;
+        margin-bottom:6px;
+      "
+    >
+      Acionamento remoto
+    </div>
+
+    <div
+      id="nomeEquipamentoAcionamento"
+      style="
+        color:#94a3b8;
+        margin-bottom:22px;
+      "
+    >
+      Aspirador VORTEX
+    </div>
+
+    <label
+      for="tempoAcionamentoVortex"
+      style="
+        display:block;
+        margin-bottom:8px;
+        font-size:14px;
+        color:#cbd5e1;
+      "
+    >
+      Tempo de acionamento
+    </label>
+
+    <div
+      style="
+        display:flex;
+        align-items:center;
+        gap:10px;
+        margin-bottom:18px;
+      "
+    >
+      <input
+        id="tempoAcionamentoVortex"
+        type="number"
+        min="1"
+        max="120"
+        value="2"
+        style="
+          width:100%;
+          background:#0b1728;
+          color:#ffffff;
+          border:1px solid #334155;
+          border-radius:10px;
+          padding:12px;
+          font-size:16px;
+          outline:none;
+        "
+      >
+
+      <span style="color:#94a3b8;">
+        min
+      </span>
+    </div>
+
+    <div
+      id="mensagemAcionamentoVortex"
+      style="
+        min-height:22px;
+        margin-bottom:16px;
+        font-size:14px;
+        color:#22c55e;
+      "
+    ></div>
+
+    <div
+      style="
+        display:flex;
+        gap:10px;
+        justify-content:flex-end;
+      "
+    >
+
+      <button
+        type="button"
+        onclick="fecharModalAcionamento()"
+        style="
+          background:#1e293b;
+          color:#ffffff;
+          border:0;
+          border-radius:10px;
+          padding:11px 16px;
+          cursor:pointer;
+        "
+      >
+        Cancelar
+      </button>
+
+      <button
+        type="button"
+        id="btnConfirmarAcionamentoVortex"
+        onclick="confirmarAcionamentoVortex()"
+        style="
+          background:#2563eb;
+          color:#ffffff;
+          border:0;
+          border-radius:10px;
+          padding:11px 18px;
+          font-weight:600;
+          cursor:pointer;
+        "
+      >
+        Acionar equipamento
+      </button>
+
+    </div>
+
+  </div>
+</div>
 </body>
 </html>
