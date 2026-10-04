@@ -1502,6 +1502,7 @@ class="admin-only"
           <h2>Central VORTEX — Clientes</h2>
           <p class="info">Clientes cadastrados na plataforma.</p>
           <div id="resumoCentral" class="equipment"></div>
+          <div id="financeiroCentralVortex"></div>
           <div id="listaClientesAdmin"></div>
         </div>
       </div>
@@ -1525,6 +1526,9 @@ class="admin-only"
           <p class="info" id="detalheClienteInfo">Carregando dados do cliente...</p>
 
           <div id="detalheClienteResumo" class="cliente-detalhe-grid"></div>
+
+          <h3>Financeiro</h3>
+          <div id="detalheClienteFinanceiro"></div>
 
           <h3>Equipamentos</h3>
           <div id="detalheClienteEquipamentos"></div>
@@ -2283,6 +2287,30 @@ if (btnClientesAdmin) {
     }
 
 
+    /* FINANCEIRO CENTRAL VORTEX */
+
+    if (usuarioEhAdmin) {
+      const financeiroCentral = document.getElementById("financeiroCentralVortex");
+      const { data: saldoCentral, error: saldoCentralErro } = await db.rpc("saldo_central_vortex");
+
+      if (financeiroCentral) {
+        financeiroCentral.innerHTML = `
+          <div class="cliente-detalhe-grid">
+            <div class="equipment">
+              <div class="info">Saldo da Central VORTEX</div>
+              <strong>${saldoCentralErro ? "--" : moedaBR(Number(saldoCentral || 0))}</strong>
+            </div>
+            <div class="equipment">
+              <div class="info">Mensalidade por cliente</div>
+              <strong>${moedaBR(50)}</strong>
+            </div>
+          </div>
+        `;
+      }
+
+      if (saldoCentralErro) console.error(saldoCentralErro);
+    }
+
     /* MENSALIDADE */
 
     const {
@@ -2493,16 +2521,7 @@ if (btnClientesAdmin) {
         totalPix += valor;
 
 
-        if (
-          p.repassado === false
-        ) {
 
-          saldoLiquido +=
-            Number(
-              p.valor_cliente
-            ) || 0;
-
-        }
 
 
         if (listaPix) {
@@ -2668,6 +2687,22 @@ if (btnClientesAdmin) {
 
     }
 
+
+    /* SALDO DISPONÍVEL SEGURO */
+
+    if (!usuarioEhAdmin) {
+      const { data: saldoRpc, error: saldoErro } = await db.rpc(
+        "saldo_disponivel_cliente",
+        { p_cliente_id: cliente.id }
+      );
+
+      if (!saldoErro) {
+        saldoLiquido = Number(saldoRpc || 0);
+      } else {
+        console.error(saldoErro);
+        saldoLiquido = 0;
+      }
+    }
 
     /* FATURAMENTO POR EQUIPAMENTO */
 
@@ -3954,6 +3989,7 @@ if (btnClientesAdmin) {
     const equipamentosEl = document.getElementById("detalheClienteEquipamentos");
     const pixEl = document.getElementById("detalheClientePix");
     const sessoesEl = document.getElementById("detalheClienteSessoes");
+    const financeiroEl = document.getElementById("detalheClienteFinanceiro");
 
     nomeEl.innerText = "Cliente VORTEX";
     infoEl.innerText = "Carregando dados do cliente...";
@@ -3961,8 +3997,9 @@ if (btnClientesAdmin) {
     equipamentosEl.innerHTML = '<div class="message">Carregando equipamentos...</div>';
     pixEl.innerHTML = "";
     sessoesEl.innerHTML = "";
+    if (financeiroEl) financeiroEl.innerHTML = '<div class="message">Carregando financeiro...</div>';
 
-    const [clienteResp, equipamentosResp, pagamentosResp, mensalidadeResp] = await Promise.all([
+    const [clienteResp, equipamentosResp, pagamentosResp, mensalidadeResp, saldoResp, repassesResp] = await Promise.all([
       db.from("clientes")
         .select("id,nome,telefone,mensalidade,tipo_usuario,ativo,criado_em")
         .eq("id", clienteId)
@@ -3980,7 +4017,13 @@ if (btnClientesAdmin) {
         .eq("cliente_id", clienteId)
         .order("vencimento", { ascending: false })
         .limit(1)
-        .maybeSingle()
+        .maybeSingle(),
+      db.rpc("saldo_disponivel_cliente", { p_cliente_id: clienteId }),
+      db.from("repasses_clientes")
+        .select("id,valor,status,descricao,criado_em")
+        .eq("cliente_id", clienteId)
+        .order("criado_em", { ascending: false })
+        .limit(20)
     ]);
 
     if (clienteResp.error || !clienteResp.data) {
@@ -4009,10 +4052,10 @@ if (btnClientesAdmin) {
       return total + (mesmoMes ? Number(p.valor_bruto || 0) : 0);
     }, 0);
 
-    const saldoDisponivel = pagamentos.reduce((total, p) => {
-      if (p.repassado === false) return total + Number(p.valor_cliente || 0);
-      return total;
-    }, 0);
+    const saldoDisponivel = saldoResp.error ? 0 : Number(saldoResp.data || 0);
+    const repasses = repassesResp.error ? [] : (repassesResp.data || []);
+    const totalRepassado = repasses.reduce((total, r) =>
+      total + (String(r.status || "").toLowerCase() === "concluido" ? Number(r.valor || 0) : 0), 0);
 
     const online = equipamentos.filter(e => String(e.status || "").toLowerCase() === "online").length;
     const ids = equipamentos.map(e => e.id);
@@ -4038,6 +4081,41 @@ if (btnClientesAdmin) {
       <div class="equipment"><div class="info">Mensalidade</div><strong>${moedaBR(cliente.mensalidade || 50)}</strong></div>
       <div class="equipment"><div class="info">Status mensalidade</div><strong>${escaparHtml(mensalidade?.status || "--")}</strong></div>
     `;
+
+    if (financeiroEl) {
+      const historico = repasses.length
+        ? repasses.map(r => `
+            <div class="equipment">
+              <strong>${moedaBR(r.valor)}</strong>
+              <div>Status: ${escaparHtml(r.status || "-")}</div>
+              <div>${escaparHtml(r.descricao || "Repasse ao cliente")}</div>
+              <div class="info">${r.criado_em ? new Date(r.criado_em).toLocaleString("pt-BR") : "-"}</div>
+            </div>
+          `).join("")
+        : '<div class="message">Nenhum repasse registrado para este cliente.</div>';
+
+      financeiroEl.innerHTML = `
+        <div class="cliente-detalhe-grid">
+          <div class="equipment">
+            <div class="info">Disponível para repasse</div>
+            <strong>${moedaBR(saldoDisponivel)}</strong>
+          </div>
+          <div class="equipment">
+            <div class="info">Total já repassado</div>
+            <strong>${moedaBR(totalRepassado)}</strong>
+          </div>
+        </div>
+        <div class="vortex-actions">
+          <button type="button" onclick="abrirModalRepasseVortex('${cliente.id}', '${String(cliente.nome || "Cliente VORTEX").replace(/'/g, "\\'")}', ${saldoDisponivel})">Registrar repasse</button>
+        </div>
+        <div id="mensagemRepasseCliente" class="message"></div>
+        <h3 style="margin-top:22px;">Histórico de repasses</h3>
+        ${historico}
+      `;
+    }
+
+    if (saldoResp.error) console.error(saldoResp.error);
+    if (repassesResp.error) console.error(repassesResp.error);
 
     if (equipamentosResp.error) {
       equipamentosEl.innerHTML = '<div class="message">Não foi possível carregar os equipamentos.</div>';
@@ -4128,6 +4206,77 @@ if (btnClientesAdmin) {
     mensagem.innerText = "";
   }, 3000);
 }
+  }
+
+  let repasseClienteId = null;
+  let repasseSaldoDisponivel = 0;
+
+  function abrirModalRepasseVortex(clienteId, nomeCliente, saldoDisponivel) {
+    if (!usuarioEhAdmin) return;
+
+    repasseClienteId = clienteId;
+    repasseSaldoDisponivel = Number(saldoDisponivel || 0);
+
+    document.getElementById("nomeClienteRepasse").textContent = nomeCliente || "Cliente VORTEX";
+    document.getElementById("saldoClienteRepasse").textContent = moedaBR(repasseSaldoDisponivel);
+    document.getElementById("valorRepasseVortex").value = "";
+    document.getElementById("descricaoRepasseVortex").value = "Repasse ao cliente";
+    document.getElementById("mensagemRepasseVortex").textContent = "";
+    document.getElementById("modalRepasseVortex").style.display = "flex";
+  }
+
+  function fecharModalRepasseVortex() {
+    document.getElementById("modalRepasseVortex").style.display = "none";
+    repasseClienteId = null;
+    repasseSaldoDisponivel = 0;
+  }
+
+  async function confirmarRepasseVortex() {
+    if (!usuarioEhAdmin || !repasseClienteId) return;
+
+    const valor = Number(document.getElementById("valorRepasseVortex").value);
+    const descricao = document.getElementById("descricaoRepasseVortex").value.trim() || "Repasse ao cliente";
+    const mensagem = document.getElementById("mensagemRepasseVortex");
+    const botao = document.getElementById("btnConfirmarRepasseVortex");
+
+    if (!Number.isFinite(valor) || valor <= 0) {
+      mensagem.textContent = "Informe um valor maior que zero.";
+      return;
+    }
+
+    if (valor > repasseSaldoDisponivel) {
+      mensagem.textContent = "O valor é maior que o saldo disponível.";
+      return;
+    }
+
+    botao.disabled = true;
+    botao.textContent = "Registrando...";
+    mensagem.textContent = "Registrando repasse...";
+
+    const { error } = await db.rpc("registrar_repasse_cliente", {
+      p_cliente_id: repasseClienteId,
+      p_valor: valor,
+      p_descricao: descricao
+    });
+
+    if (error) {
+      console.error(error);
+      mensagem.textContent = "Não foi possível registrar: " + error.message;
+      botao.disabled = false;
+      botao.textContent = "Confirmar repasse";
+      return;
+    }
+
+    mensagem.textContent = "✓ Repasse registrado com sucesso.";
+    botao.textContent = "Registrado";
+
+    const clienteIdAtual = repasseClienteId;
+    setTimeout(async () => {
+      fecharModalRepasseVortex();
+      botao.disabled = false;
+      botao.textContent = "Confirmar repasse";
+      await abrirClienteAdmin(clienteIdAtual);
+    }, 1000);
   }
 
   let equipamentoAcionamentoId = null;
@@ -4367,6 +4516,28 @@ async function confirmarAcionamentoVortex() {
   verificarSessao();
 
 </script>
+<!-- MODAL REPASSE VORTEX -->
+<div id="modalRepasseVortex" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:99999;align-items:center;justify-content:center;padding:20px;">
+  <div style="width:100%;max-width:430px;background:#07111f;border:1px solid #1e3a5f;border-radius:16px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.55);">
+    <div style="font-size:20px;font-weight:700;margin-bottom:6px;">Registrar repasse</div>
+    <div id="nomeClienteRepasse" style="color:#94a3b8;margin-bottom:8px;">Cliente VORTEX</div>
+    <div style="color:#cbd5e1;margin-bottom:18px;">Disponível: <strong id="saldoClienteRepasse">R$ 0,00</strong></div>
+
+    <label for="valorRepasseVortex" style="display:block;margin-bottom:5px;color:#cbd5e1;">Valor do repasse</label>
+    <input id="valorRepasseVortex" type="number" min="0.01" step="0.01" placeholder="0,00">
+
+    <label for="descricaoRepasseVortex" style="display:block;margin-top:10px;margin-bottom:5px;color:#cbd5e1;">Descrição</label>
+    <input id="descricaoRepasseVortex" type="text" value="Repasse ao cliente">
+
+    <div id="mensagemRepasseVortex" style="min-height:22px;margin:12px 0;font-size:14px;color:#22c55e;"></div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button type="button" onclick="fecharModalRepasseVortex()" style="background:#1e293b;padding:11px 16px;">Cancelar</button>
+      <button type="button" id="btnConfirmarRepasseVortex" onclick="confirmarRepasseVortex()" style="padding:11px 18px;">Confirmar repasse</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL ACIONAMENTO REMOTO VORTEX -->
 <div
   id="modalAcionamentoVortex"
