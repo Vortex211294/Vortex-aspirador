@@ -3863,18 +3863,20 @@ if (btnClientesAdmin) {
 
     if (!confirm(`Acionar ${nomeEquipamento || "Aspirador VORTEX"} por ${minutos} minuto(s)?`)) return;
 
-    const { error } = await db.from("equipamentos")
-      .update({
-        comando: "ligar",
-        tempo_acionamento_segundos: Math.round(minutos * 60)
-      })
-      .eq("id", equipamentoId);
+   const { error } = await db.rpc(
+  "acionar_equipamento_remoto",
+  {
+    p_equipamento_id: equipamentoId,
+    p_tempo_segundos: Math.round(minutos * 60)
+  }
+);
 
-    if (error) {
-      console.error(error);
-      alert("O comando não foi liberado pelo Supabase ainda. Vamos configurar essa permissão na próxima etapa.");
-      return;
-    }
+   if (error) {
+  console.error(error);
+  alert("Não foi possível acionar o equipamento: " + error.message);
+  return;
+}
+    
 
     alert("Comando enviado ao equipamento.");
 
