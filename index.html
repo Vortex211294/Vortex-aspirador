@@ -1677,6 +1677,17 @@ class="admin-only"
 
             </div>
 
+            <div class="vortex-weekdays" data-week-context="dashboard-equip">
+              <button type="button" onclick="filtrarDiaSemanaVortex('dashboard-equip',1,this)">Seg</button>
+              <button type="button" onclick="filtrarDiaSemanaVortex('dashboard-equip',2,this)">Ter</button>
+              <button type="button" onclick="filtrarDiaSemanaVortex('dashboard-equip',3,this)">Qua</button>
+              <button type="button" onclick="filtrarDiaSemanaVortex('dashboard-equip',4,this)">Qui</button>
+              <button type="button" onclick="filtrarDiaSemanaVortex('dashboard-equip',5,this)">Sex</button>
+              <button type="button" onclick="filtrarDiaSemanaVortex('dashboard-equip',6,this)">Sáb</button>
+              <button type="button" onclick="filtrarDiaSemanaVortex('dashboard-equip',0,this)">Dom</button>
+            </div>
+            <div class="vortex-week-caption">Seg → Dom • toque em um dia para filtrar o faturamento por equipamento</div>
+
           </section>
 
           <section class="dash-panel">
@@ -1694,7 +1705,7 @@ class="admin-only"
           <section class="dash-panel">
 
             <h3>
-              ↗ Faturamento — últimos 7 dias reais
+              ↗ Faturamento — semana atual (Seg → Dom)
             </h3>
 
             <div class="chart-box small">
@@ -1840,7 +1851,7 @@ class="admin-only"
             seus equipamentos.
           </p>
 
-          <div class="vortex-build-badge">✓ VERSÃO 05/10/2026 • SEMANA REAL SEG → DOM</div>
+          <div class="vortex-build-badge">✓ VERSÃO 05/10/2026 • GRÁFICOS SEG → DOM • DADOS REAIS</div>
 
           <div class="equipment">
 
@@ -1988,7 +1999,7 @@ class="admin-only"
           </h2>
 
           <p class="info">Acompanhe os pagamentos recebidos e configure a cobrança PIX de cada equipamento.</p>
-          <div class="vortex-build-badge">✓ INDEX ATUALIZADO • GERAR QR CODE PIX • SEMANA SEG → DOM</div>
+          <div class="vortex-build-badge">✓ INDEX ATUALIZADO • PIX REAL • GRÁFICOS SEG → DOM</div>
 
           <h3 class="vortex-section-title">Cobrança PIX por equipamento</h3>
           <div class="vortex-module-box">
@@ -3981,145 +3992,11 @@ if (btnClientesAdmin) {
 
     /* GRÁFICO POR EQUIPAMENTO */
 
-    const nomes =
-      equipamentos
-        .map(
-          e =>
-            e.nome ||
-            e.codigo ||
-            "VORTEX"
-        );
-
-
-    const valores =
-      equipamentos
-        .map(
-          e =>
-            faturamentoEquipamentos[
-              e.id
-            ] || 0
-        );
-
-
-    const canvasEquip =
-      document
-        .getElementById(
-          "graficoEquipamentos"
-        );
-
-
-    if (
-      canvasEquip
-    ) {
-
-      if (
-        graficoEquipamentosVortex
-      ) {
-
-        graficoEquipamentosVortex
-          .destroy();
-
-      }
-
-
-      graficoEquipamentosVortex =
-        new Chart(
-          canvasEquip,
-          {
-
-            type: "bar",
-
-            data: {
-
-              labels: nomes,
-
-              datasets: [
-
-                {
-
-                  data: valores,
-
-                  backgroundColor:
-                    "#118cff",
-
-                  borderColor:
-                    "#39a9ff",
-
-                  borderWidth: 1,
-
-                  borderRadius: 6
-
-                }
-
-              ]
-
-            },
-
-            options: {
-
-              responsive: true,
-
-              maintainAspectRatio:
-                false,
-
-              plugins: {
-
-                legend: {
-                  display: false
-                }
-
-              },
-
-              scales: {
-
-                x: {
-
-                  ticks: {
-                    color: "#dbeafe"
-                  },
-
-                  grid: {
-                    color:
-                      "rgba(255,255,255,.04)"
-                  }
-
-                },
-
-                y: {
-
-                  beginAtZero: true,
-
-                  ticks: {
-
-                    color: "#dbeafe",
-
-                    callback:
-                      value =>
-                        "R$ " +
-                        Number(value)
-                          .toLocaleString(
-                            "pt-BR"
-                          )
-
-                  },
-
-                  grid: {
-
-                    color:
-                      "rgba(255,255,255,.08)"
-
-                  }
-
-                }
-
-              }
-
-            }
-
-          }
-        );
-
-    }
+    window.vortexDashboardEquipamentos = equipamentos || [];
+    window.vortexDashboardPagamentos = pagamentos || [];
+    renderizarGraficoEquipamentosPorDiaVortex(
+      filtroDiasAtivosVortex["dashboard-equip"] ?? null
+    );
 
 
     /* FATURAMENTO POR DIA */
@@ -4155,14 +4032,13 @@ if (btnClientesAdmin) {
       });
 
 
-    /* Últimos 7 dias reais, inclusive dias sem venda = zero */
+    /* Semana atual fixa: sempre começa na segunda e termina no domingo */
     const dias = [];
-    const baseGrafico = new Date();
-    baseGrafico.setHours(0,0,0,0);
+    const inicioGrafico = inicioSemanaVortex(new Date());
 
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(baseGrafico);
-      d.setDate(baseGrafico.getDate() - i);
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(inicioGrafico);
+      d.setDate(inicioGrafico.getDate() + i);
       const chave = chaveDataLocalVortex(d);
       dias.push(chave);
       if (!(chave in porDia)) porDia[chave] = 0;
@@ -5245,9 +5121,79 @@ async function confirmarAcionamentoVortex() {
       renderizarFaturamentoPorDiaVortex(filtroDiasAtivosVortex[contexto]);
       return;
     }
+    if (contexto === "dashboard-equip") {
+      renderizarGraficoEquipamentosPorDiaVortex(filtroDiasAtivosVortex[contexto]);
+      return;
+    }
     document.querySelectorAll(`[data-vortex-context="${contexto}"]`).forEach(el => {
       const diaAtivo = filtroDiasAtivosVortex[contexto];
       el.style.display = diaAtivo === null ? "" : (mesmoDiaSemanaAtualVortex(el.dataset.vortexDate, diaAtivo) ? "" : "none");
+    });
+  }
+
+  function renderizarGraficoEquipamentosPorDiaVortex(diaSemana = null) {
+    if (typeof Chart === "undefined") return;
+
+    const canvas = document.getElementById("graficoEquipamentos");
+    if (!canvas) return;
+
+    const equipamentos = window.vortexDashboardEquipamentos || window.vortexEquipamentosAtuais || [];
+    const pagamentos = window.vortexDashboardPagamentos || window.vortexPagamentosAtuais || [];
+    const filtrados = diaSemana === null
+      ? pagamentos
+      : pagamentos.filter(p => mesmoDiaSemanaAtualVortex(p.pago_em || p.criado_em, diaSemana));
+
+    const totais = {};
+    filtrados.forEach(p => {
+      if (!p.equipamento_id) return;
+      totais[p.equipamento_id] = (totais[p.equipamento_id] || 0) + Number(p.valor_bruto || 0);
+    });
+
+    const nomesDias = {0:"Dom",1:"Seg",2:"Ter",3:"Qua",4:"Qui",5:"Sex",6:"Sáb"};
+    const nomes = equipamentos.map(e => e.nome || e.codigo || "VORTEX");
+    const valores = equipamentos.map(e => totais[e.id] || 0);
+
+    if (graficoEquipamentosVortex) graficoEquipamentosVortex.destroy();
+
+    graficoEquipamentosVortex = new Chart(canvas, {
+      type: "bar",
+      data: {
+        labels: nomes,
+        datasets: [{
+          label: diaSemana === null ? "Faturamento total" : `Faturamento • ${nomesDias[Number(diaSemana)]}`,
+          data: valores,
+          backgroundColor: "#118cff",
+          borderColor: "#39a9ff",
+          borderWidth: 1,
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => `${ctx.dataset.label}: ${moedaBR(ctx.raw || 0)}`
+            }
+          }
+        },
+        scales: {
+          x: {
+            ticks: { color: "#dbeafe" },
+            grid: { color: "rgba(255,255,255,.04)" }
+          },
+          y: {
+            beginAtZero: true,
+            ticks: {
+              color: "#dbeafe",
+              callback: value => "R$ " + Number(value).toLocaleString("pt-BR")
+            },
+            grid: { color: "rgba(255,255,255,.08)" }
+          }
+        }
+      }
     });
   }
 
