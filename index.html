@@ -988,6 +988,34 @@
         font-size: 27px;
       }
     }
+
+    /* NOVOS MÓDULOS VORTEX */
+    #painel .sidebar { overflow-y: auto; }
+    .vortex-module-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:16px 0;}
+    .vortex-module-grid.two{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .vortex-module-box{padding:16px;border-radius:12px;background:#051a37;border:1px solid #18558d;min-width:0;}
+    .vortex-module-box h3,.vortex-module-box h4{margin:0 0 10px;}
+    .vortex-module-box .info + strong{display:block;margin-top:5px;}
+    .vortex-section-title{margin:24px 0 10px;font-size:18px;}
+    .vortex-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:end;}
+    .vortex-row.three{grid-template-columns:repeat(3,minmax(0,1fr));}
+    .vortex-field label{display:block;color:#cbd5e1;font-size:13px;margin-bottom:4px;}
+    .vortex-field select,.vortex-field textarea{width:100%;padding:14px;margin:7px 0;border-radius:10px;border:1px solid #28547e;background:#04142d;color:#fff;outline:none;}
+    .vortex-field textarea{min-height:96px;resize:vertical;}
+    .vortex-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0;}
+    .vortex-tabs button{padding:10px 14px;background:#0a315f;border:1px solid #1c69aa;}
+    .vortex-tabs button.ativo{background:linear-gradient(90deg,#087cff,#1267d8);}
+    .vortex-badge{display:inline-block;padding:5px 9px;border-radius:20px;border:1px solid #1760a0;background:rgba(22,140,255,.13);color:#6fc0ff;font-size:12px;margin-top:6px;}
+    .vortex-badge.pending{border-color:#7c5d15;background:rgba(245,158,11,.12);color:#fbbf24;}
+    .vortex-divider{height:1px;background:rgba(121,174,222,.16);margin:16px 0;}
+    .vortex-switch-line{display:flex;justify-content:space-between;gap:14px;align-items:center;padding:13px 0;border-top:1px solid rgba(121,174,222,.14);}
+    .vortex-switch-line:first-child{border-top:0;}
+    .vortex-switch-line input[type="checkbox"]{width:20px;height:20px;margin:0;accent-color:#168cff;}
+    .vortex-qr-placeholder{min-height:210px;border:1px dashed #2e6da4;border-radius:14px;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;background:rgba(3,17,38,.55);color:#9eb4cf;}
+    .vortex-actions-wide{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;}
+    .vortex-actions-wide button{padding:11px 14px;}
+    @media(max-width:900px){.vortex-module-grid,.vortex-module-grid.two,.vortex-row,.vortex-row.three{grid-template-columns:1fr;}}
+
 </style>
 </head>
 
@@ -1167,6 +1195,14 @@ class="admin-only"
         </button>
 
         <button
+          data-page="Controladores"
+          onclick="abrirPagina('Controladores')"
+        >
+          <span class="menu-icon">⌁</span>
+          <span>Controladores</span>
+        </button>
+
+        <button
           data-page="Faturamento"
           onclick="abrirPagina('Faturamento')"
         >
@@ -1188,6 +1224,19 @@ class="admin-only"
         >
           <span class="menu-icon">▦</span>
           <span>PIX</span>
+        </button>
+
+        <button data-page="Financeiro" onclick="abrirPagina('Financeiro')">
+          <span class="menu-icon">$</span><span>Financeiro</span>
+        </button>
+        <button data-page="Relatorios" onclick="abrirPagina('Relatorios')">
+          <span class="menu-icon">▤</span><span>Relatórios</span>
+        </button>
+        <button data-page="Configuracoes" onclick="abrirPagina('Configuracoes')">
+          <span class="menu-icon">⚙</span><span>Configurações</span>
+        </button>
+        <button data-page="Notificacoes" onclick="abrirPagina('Notificacoes')">
+          <span class="menu-icon">◌</span><span>Notificações</span>
         </button>
 
         <button
@@ -1567,6 +1616,22 @@ class="admin-only"
 
       </div>
 
+
+      <!-- CONTROLADORES -->
+      <div id="paginaControladores" class="paginaVortex hidden">
+        <div class="card">
+          <h2>Controladores</h2>
+          <p class="info">Gerencie conexão, comandos, histórico e as futuras informações do ESP32.</p>
+          <div class="vortex-module-grid">
+            <div class="vortex-module-box"><div class="info">Comunicação</div><strong>Wi-Fi / Supabase</strong><div class="vortex-badge">Estrutura pronta</div></div>
+            <div class="vortex-module-box"><div class="info">Telemetria</div><strong>SSID, sinal, IP, MAC e firmware</strong><div class="vortex-badge pending">Aguardando ESP32</div></div>
+            <div class="vortex-module-box"><div class="info">Controle</div><strong>Acionamento e sincronização</strong><div class="vortex-badge">VORTEX</div></div>
+          </div>
+          <div id="listaControladoresVortex"><div class="message">Abra esta página para carregar os controladores.</div></div>
+          <div id="detalheControladorVortex"></div>
+        </div>
+      </div>
+
       <!-- FATURAMENTO -->
 
       <div
@@ -1696,18 +1761,60 @@ class="admin-only"
             PIX
           </h2>
 
-          <p class="info">
-            Acompanhe os pagamentos
-            recebidos via PIX.
-          </p>
+          <p class="info">Acompanhe os pagamentos recebidos e configure a cobrança PIX de cada equipamento.</p>
 
-          <div
-            id="listaPix"
-          ></div>
+          <h3 class="vortex-section-title">Cobrança PIX por equipamento</h3>
+          <div class="vortex-module-box">
+            <div class="vortex-row">
+              <div class="vortex-field">
+                <label>Equipamento</label>
+                <select id="pixEquipamentoVortex"><option value="">Carregando equipamentos...</option></select>
+              </div>
+              <div><div class="info">Integração</div><strong>QR Code + TXID individual</strong><div class="vortex-badge pending">Supabase/PagBank será conectado depois</div></div>
+            </div>
+            <div class="vortex-tabs">
+              <button type="button" id="btnPixFixoVortex" class="ativo" onclick="selecionarModoPixVortex('fixo')">Valor fixo</button>
+              <button type="button" id="btnPixMinutosVortex" onclick="selecionarModoPixVortex('minutos')">Valor por minutos</button>
+            </div>
+            <div id="pixModoFixoVortex">
+              <div class="vortex-row">
+                <div class="vortex-field"><label>Valor fixo (R$)</label><input id="pixValorFixoVortex" type="number" min="0.01" step="0.01" value="4.00"></div>
+                <div class="vortex-field"><label>Tempo liberado (minutos)</label><input id="pixMinutosFixosVortex" type="number" min="1" step="1" value="2"></div>
+              </div>
+              <p class="info">O proprietário define o valor e o tempo. O QR Code fica vinculado ao equipamento.</p>
+            </div>
+            <div id="pixModoMinutosVortex" class="hidden">
+              <div class="vortex-row">
+                <div class="vortex-field"><label>Preço por minuto (R$)</label><input id="pixPrecoMinutoVortex" type="number" min="0.01" step="0.01" value="2.00"></div>
+                <div class="vortex-field"><label>Minutos para pré-visualização</label><input id="pixQtdMinutosVortex" type="number" min="1" step="1" value="2"></div>
+              </div>
+              <p class="info">O usuário final escolhe os minutos. Cada escolha cria nova cobrança, novo TXID e novo QR Code.</p>
+            </div>
+            <div class="vortex-row" style="margin-top:12px;">
+              <div><button type="button" onclick="prepararPixVortex()" style="width:100%;padding:13px;">Preparar QR Code</button></div>
+              <div id="resumoPixVortex" class="vortex-qr-placeholder">Selecione o modo e clique em “Preparar QR Code”.</div>
+            </div>
+          </div>
+          <h3 class="vortex-section-title">Histórico de pagamentos PIX</h3>
+
+          <div id="listaPix"></div>
 
         </div>
 
       </div>
+
+
+      <!-- FINANCEIRO -->
+      <div id="paginaFinanceiro" class="paginaVortex hidden"><div class="card"><h2>Financeiro</h2><p class="info">Visão consolidada de vendas, comissão VORTEX, mensalidade, saldo e repasses.</p><div id="financeiroModuloVortex"><div class="message">Abra esta página para carregar o financeiro.</div></div></div></div>
+
+      <!-- RELATÓRIOS -->
+      <div id="paginaRelatorios" class="paginaVortex hidden"><div class="card"><h2>Relatórios</h2><p class="info">Consulte vendas, sessões e desempenho por período.</p><div class="vortex-row three"><div class="vortex-field"><label>Data inicial</label><input id="relatorioDataInicioVortex" type="date"></div><div class="vortex-field"><label>Data final</label><input id="relatorioDataFimVortex" type="date"></div><button type="button" onclick="gerarRelatorioVortex()" style="padding:13px;">Gerar relatório</button></div><div id="relatorioVortexResultado" style="margin-top:16px;"><div class="message">Escolha o período e gere o relatório.</div></div></div></div>
+
+      <!-- CONFIGURAÇÕES -->
+      <div id="paginaConfiguracoes" class="paginaVortex hidden"><div class="card"><h2>Configurações</h2><p class="info">Estrutura visual pronta; os dados definitivos serão ligados ao Supabase na próxima etapa.</p><h3 class="vortex-section-title">Recebimento / PIX</h3><div class="vortex-module-box"><div class="vortex-row"><div class="vortex-field"><label>Tipo de chave PIX</label><select id="configTipoPixVortex"><option value="cpf_cnpj">CPF / CNPJ</option><option value="telefone">Telefone</option><option value="email">E-mail</option><option value="aleatoria">Chave aleatória</option></select></div><div class="vortex-field"><label>Chave PIX para repasse</label><input id="configChavePixVortex" type="text" placeholder="Informe a chave PIX"></div></div><div class="vortex-row"><div class="vortex-field"><label>Nome do titular</label><input id="configTitularPixVortex" type="text" placeholder="Nome do titular"></div><div class="vortex-field"><label>Modo padrão de cobrança</label><select id="configModoCobrancaVortex"><option value="fixo">Valor fixo</option><option value="minutos">Valor por minutos</option></select></div></div><div class="vortex-actions-wide"><button type="button" onclick="salvarConfiguracoesLocaisVortex()">Salvar rascunho local</button><button type="button" class="secondary" onclick="acaoPendenteSupabaseVortex('Salvar configurações na conta')">Vincular ao Supabase</button></div><div id="configMensagemVortex" class="message"></div></div><h3 class="vortex-section-title">Controlador</h3><div class="vortex-module-grid two"><div class="vortex-module-box"><div class="info">Atualização de firmware</div><strong>Remota / Central</strong><div class="vortex-badge pending">Aguardando ESP32</div></div><div class="vortex-module-box"><div class="info">Heartbeat</div><strong>Online/offline automático</strong><div class="vortex-badge pending">Aguardando ESP32</div></div></div></div></div>
+
+      <!-- NOTIFICAÇÕES -->
+      <div id="paginaNotificacoes" class="paginaVortex hidden"><div class="card"><h2>Notificações</h2><p class="info">Escolha quais avisos o VORTEX deverá enviar.</p><div class="vortex-module-box"><div class="vortex-switch-line"><div><strong>PIX recebido</strong><div class="info">Avisar a cada pagamento confirmado.</div></div><input id="notifPixVortex" type="checkbox" checked></div><div class="vortex-switch-line"><div><strong>Equipamento offline</strong><div class="info">Avisar quando o controlador parar de responder.</div></div><input id="notifOfflineVortex" type="checkbox" checked></div><div class="vortex-switch-line"><div><strong>Mensalidade</strong><div class="info">Avisar quando for quitada ou ficar pendente.</div></div><input id="notifMensalidadeVortex" type="checkbox" checked></div><div class="vortex-switch-line"><div><strong>Repasse</strong><div class="info">Avisar quando o repasse for registrado/concluído.</div></div><input id="notifRepasseVortex" type="checkbox" checked></div><div class="vortex-actions-wide"><button type="button" onclick="salvarNotificacoesLocaisVortex()">Salvar preferências</button></div><div id="notifMensagemVortex" class="message"></div></div></div></div>
 
       <!-- MENSALIDADE -->
 
@@ -1925,6 +2032,13 @@ class="admin-only"
       });
 
     fecharMenuMobileVortex();
+
+    if (pagina === "Controladores") carregarControladoresVortex();
+    if (pagina === "Pix") carregarPixConfigVortex();
+    if (pagina === "Financeiro") carregarFinanceiroModuloVortex();
+    if (pagina === "Relatorios") prepararDatasRelatorioVortex();
+    if (pagina === "Configuracoes") carregarConfiguracoesLocaisVortex();
+    if (pagina === "Notificacoes") carregarNotificacoesLocaisVortex();
 
   }
 
@@ -3258,6 +3372,10 @@ if (btnClientesAdmin) {
               Acionar remotamente
             </button>
 
+            <button type="button" class="secondary" onclick="abrirControladorDoEquipamentoVortex('${e.id}')" style="margin-top:10px;width:100%;padding:12px;">
+              Painel do controlador
+            </button>
+
             <div class="info" style="margin-top:10px;">
               Comando: ${e.comando || "aguardando"}
             </div>
@@ -4144,6 +4262,7 @@ if (btnClientesAdmin) {
             <div class="vortex-actions">
               <button type="button" onclick="salvarConfiguracaoAdmin('${e.id}')">Salvar configuração</button>
               <button type="button" class="secondary" onclick="acionarEquipamento('${e.id}', '${String(e.nome || "Aspirador VORTEX").replace(/'/g, "\\'")}')">Acionar remotamente</button>
+              <button type="button" class="secondary" onclick="abrirControladorDoEquipamentoVortex('${e.id}')">Painel do controlador</button>
             </div>
             <div id="admin-mensagem-${e.id}" class="message"></div>
           </div>
@@ -4476,6 +4595,249 @@ async function confirmarAcionamentoVortex() {
 
   }
 
+
+
+  /* NOVOS MÓDULOS VORTEX */
+
+  let controladoresCacheVortex = [];
+  let pixModoVortex = "fixo";
+
+  function escaparAtributoVortex(valor) {
+    return String(valor ?? "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
+  }
+
+  function acaoPendenteSupabaseVortex(acao) {
+    alert(`${acao}: a tela já está pronta. A execução/gravação real será conectada ao Supabase na próxima etapa.`);
+  }
+
+  async function carregarControladoresVortex(focoId = null) {
+    const lista = document.getElementById("listaControladoresVortex");
+    const detalhe = document.getElementById("detalheControladorVortex");
+    if (!lista) return;
+    lista.innerHTML = '<div class="message">Carregando controladores...</div>';
+    if (detalhe) detalhe.innerHTML = "";
+
+    const { data, error } = await db.from("equipamentos")
+      .select("id,cliente_id,codigo,nome,status,ultima_conexao_em,comando,tempo_minutos,valor_tempo,preco_minuto,tempo_acionamento_segundos,comando_criado_em,comando_recebido_em,acionamento_finalizado_em")
+      .order("nome", { ascending: true });
+
+    if (error) {
+      console.error(error);
+      lista.innerHTML = '<div class="message">Não foi possível carregar os controladores.</div>';
+      return;
+    }
+
+    controladoresCacheVortex = data || [];
+    if (!controladoresCacheVortex.length) {
+      lista.innerHTML = '<div class="message">Nenhum equipamento/controlador encontrado.</div>';
+      return;
+    }
+
+    lista.innerHTML = controladoresCacheVortex.map(e => {
+      const online = String(e.status || "").toLowerCase() === "online";
+      const ultima = e.ultima_conexao_em ? new Date(e.ultima_conexao_em).toLocaleString("pt-BR") : "Sem conexão registrada";
+      return `
+        <div class="equipment cliente-admin-card" onclick="abrirControladorDetalheVortex('${e.id}')">
+          <strong>${escaparHtml(e.nome || "Aspirador VORTEX")}</strong>
+          <div>Código: ${escaparHtml(e.codigo || "-")}</div>
+          <div class="${online ? "online" : "offline"}">${online ? "● ONLINE" : "● OFFLINE"}</div>
+          <div class="info">Última conexão: ${escaparHtml(ultima)}</div>
+          <div class="info">Comando atual: ${escaparHtml(e.comando || "aguardando")}</div>
+          <div class="vortex-actions-wide">
+            <button type="button" onclick="event.stopPropagation();abrirControladorDetalheVortex('${e.id}')">Abrir painel</button>
+            <button type="button" class="secondary" onclick="event.stopPropagation();sincronizarControladorVortex('${e.id}')">Sincronizar</button>
+          </div>
+        </div>`;
+    }).join("");
+
+    if (focoId) abrirControladorDetalheVortex(focoId);
+  }
+
+  function abrirControladorDoEquipamentoVortex(equipamentoId) {
+    abrirPagina("Controladores");
+    setTimeout(() => carregarControladoresVortex(equipamentoId), 80);
+  }
+
+  function abrirControladorDetalheVortex(equipamentoId) {
+    const detalhe = document.getElementById("detalheControladorVortex");
+    if (!detalhe) return;
+    const e = controladoresCacheVortex.find(x => x.id === equipamentoId);
+    if (!e) return;
+    const online = String(e.status || "").toLowerCase() === "online";
+    const ultima = e.ultima_conexao_em ? new Date(e.ultima_conexao_em).toLocaleString("pt-BR") : "--";
+
+    detalhe.innerHTML = `
+      <h3 class="vortex-section-title">Painel do controlador — ${escaparHtml(e.nome || "Aspirador VORTEX")}</h3>
+      <div class="vortex-module-grid">
+        <div class="vortex-module-box"><div class="info">Status</div><strong class="${online ? "status-online" : "status-offline"}">${online ? "ONLINE" : "OFFLINE"}</strong></div>
+        <div class="vortex-module-box"><div class="info">Código / serial</div><strong>${escaparHtml(e.codigo || "-")}</strong></div>
+        <div class="vortex-module-box"><div class="info">Última conexão</div><strong>${escaparHtml(ultima)}</strong></div>
+        <div class="vortex-module-box"><div class="info">Wi-Fi / SSID</div><strong>--</strong><div class="vortex-badge pending">Aguardando ESP32</div></div>
+        <div class="vortex-module-box"><div class="info">Sinal Wi-Fi</div><strong>-- dBm</strong><div class="vortex-badge pending">Aguardando ESP32</div></div>
+        <div class="vortex-module-box"><div class="info">IP local</div><strong>--</strong></div>
+        <div class="vortex-module-box"><div class="info">MAC Address</div><strong>--</strong></div>
+        <div class="vortex-module-box"><div class="info">Firmware</div><strong>--</strong></div>
+        <div class="vortex-module-box"><div class="info">Tempo ligado</div><strong>--</strong></div>
+      </div>
+      <div class="vortex-module-box">
+        <div class="info">Comando atual</div><strong>${escaparHtml(e.comando || "aguardando")}</strong>
+        <div class="info" style="margin-top:8px;">Tempo: ${Number(e.tempo_minutos || 0)} min • Valor: ${moedaBR(e.valor_tempo || 0)}</div>
+        <div class="vortex-actions-wide">
+          <button type="button" onclick="acionarEquipamento('${e.id}','${escaparAtributoVortex(e.nome || "Aspirador VORTEX")}')">Acionar remotamente</button>
+          <button type="button" class="secondary" onclick="sincronizarControladorVortex('${e.id}')">Sincronizar</button>
+          <button type="button" class="secondary" onclick="carregarHistoricoControladorVortex('${e.id}')">Histórico</button>
+          <button type="button" class="secondary" onclick="acaoPendenteSupabaseVortex('Configuração de Wi-Fi')">Configurar Wi-Fi</button>
+          <button type="button" class="secondary" onclick="acaoPendenteSupabaseVortex('Reinício remoto do controlador')">Reiniciar</button>
+          <button type="button" class="secondary" onclick="acaoPendenteSupabaseVortex('Atualização de firmware')">Firmware</button>
+        </div>
+        <div id="historicoControladorVortex"></div>
+      </div>`;
+    detalhe.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  async function sincronizarControladorVortex(equipamentoId) {
+    await carregarControladoresVortex(equipamentoId);
+    const h = document.getElementById("historicoControladorVortex");
+    if (h) h.innerHTML = '<div class="message" style="color:#22c55e;">✓ Dados recarregados do Supabase.</div>';
+  }
+
+  async function carregarHistoricoControladorVortex(equipamentoId) {
+    const alvo = document.getElementById("historicoControladorVortex");
+    if (!alvo) return;
+    alvo.innerHTML = '<div class="message">Carregando histórico...</div>';
+    const [pagResp, sessResp] = await Promise.all([
+      db.from("pagamentos").select("id,valor_bruto,minutos,status,criado_em,pago_em").eq("equipamento_id", equipamentoId).order("criado_em", { ascending: false }).limit(10),
+      db.from("sessoes").select("id,minutos_comprados,status,iniciado_em,finalizado_em,criado_em").eq("equipamento_id", equipamentoId).order("criado_em", { ascending: false }).limit(10)
+    ]);
+    const pags = pagResp.error ? [] : (pagResp.data || []);
+    const sessoes = sessResp.error ? [] : (sessResp.data || []);
+    alvo.innerHTML = `<div class="vortex-divider"></div><h4>Histórico recente</h4><div class="vortex-module-grid two"><div class="vortex-module-box"><div class="info">Pagamentos</div><strong>${pags.length}</strong></div><div class="vortex-module-box"><div class="info">Sessões</div><strong>${sessoes.length}</strong></div></div>${sessoes.slice(0,5).map(x => `<div class="status-row"><div><strong>Sessão ${Number(x.minutos_comprados || 0)} min</strong><span>${escaparHtml(x.status || "-")}</span></div><div class="status-money"><small>${x.criado_em ? new Date(x.criado_em).toLocaleString("pt-BR") : "-"}</small></div></div>`).join("") || '<div class="message">Sem sessões recentes.</div>'}`;
+  }
+
+  async function carregarPixConfigVortex() {
+    const select = document.getElementById("pixEquipamentoVortex");
+    if (!select) return;
+    const { data, error } = await db.from("equipamentos").select("id,codigo,nome,preco_minuto,tempo_minutos,valor_tempo").order("nome", { ascending: true });
+    if (error) {
+      console.error(error);
+      select.innerHTML = '<option value="">Erro ao carregar equipamentos</option>';
+      return;
+    }
+    const equipamentos = data || [];
+    select.innerHTML = equipamentos.length ? equipamentos.map(e => `<option value="${e.id}">${escaparHtml(e.nome || "Aspirador VORTEX")} — ${escaparHtml(e.codigo || "-")}</option>`).join("") : '<option value="">Nenhum equipamento disponível</option>';
+    if (equipamentos[0]) {
+      const e = equipamentos[0];
+      if (Number(e.valor_tempo || 0) > 0) document.getElementById("pixValorFixoVortex").value = Number(e.valor_tempo).toFixed(2);
+      if (Number(e.tempo_minutos || 0) > 0) document.getElementById("pixMinutosFixosVortex").value = Number(e.tempo_minutos);
+      if (Number(e.preco_minuto || 0) > 0) document.getElementById("pixPrecoMinutoVortex").value = Number(e.preco_minuto).toFixed(2);
+    }
+  }
+
+  function selecionarModoPixVortex(modo) {
+    pixModoVortex = modo === "minutos" ? "minutos" : "fixo";
+    document.getElementById("pixModoFixoVortex")?.classList.toggle("hidden", pixModoVortex !== "fixo");
+    document.getElementById("pixModoMinutosVortex")?.classList.toggle("hidden", pixModoVortex !== "minutos");
+    document.getElementById("btnPixFixoVortex")?.classList.toggle("ativo", pixModoVortex === "fixo");
+    document.getElementById("btnPixMinutosVortex")?.classList.toggle("ativo", pixModoVortex === "minutos");
+  }
+
+  function prepararPixVortex() {
+    const eq = document.getElementById("pixEquipamentoVortex");
+    const resumo = document.getElementById("resumoPixVortex");
+    if (!eq?.value || !resumo) return alert("Selecione um equipamento.");
+    let valor = 0, minutos = 0;
+    if (pixModoVortex === "fixo") {
+      valor = Number(document.getElementById("pixValorFixoVortex")?.value || 0);
+      minutos = Number(document.getElementById("pixMinutosFixosVortex")?.value || 0);
+    } else {
+      const preco = Number(document.getElementById("pixPrecoMinutoVortex")?.value || 0);
+      minutos = Number(document.getElementById("pixQtdMinutosVortex")?.value || 0);
+      valor = preco * minutos;
+    }
+    if (!(valor > 0) || !(minutos >= 1)) {
+      resumo.innerHTML = '<span style="color:#ff8a8a;">Informe valor e minutos válidos.</span>';
+      return;
+    }
+    resumo.innerHTML = `<div><strong>${pixModoVortex === "fixo" ? "Valor fixo" : "Valor por minutos"}</strong><br><br>Valor: <strong>${moedaBR(valor)}</strong><br>Tempo: <strong>${minutos} min</strong><br><br><span class="vortex-badge pending">QR real ainda não emitido</span><br><br><span class="info">Na etapa Supabase/PagBank, será criada uma cobrança com TXID exclusivo e QR Code real.</span></div>`;
+  }
+
+  async function carregarFinanceiroModuloVortex() {
+    const alvo = document.getElementById("financeiroModuloVortex");
+    if (!alvo) return;
+    alvo.innerHTML = '<div class="message">Carregando financeiro...</div>';
+
+    const pagamentosResp = await db.from("pagamentos").select("valor_bruto,comissao_vortex,valor_cliente,status,pago_em,criado_em").eq("status","PAID").order("criado_em",{ascending:false}).limit(500);
+    const pagamentos = pagamentosResp.error ? [] : (pagamentosResp.data || []);
+    const bruto = pagamentos.reduce((t,p)=>t+Number(p.valor_bruto||0),0);
+    const comissao = pagamentos.reduce((t,p)=>t+Number(p.comissao_vortex||0),0);
+    const liquido = pagamentos.reduce((t,p)=>t+Number(p.valor_cliente||0),0);
+
+    let saldo = 0, saldoErro = null;
+    if (usuarioEhAdmin) {
+      const r = await db.rpc("saldo_central_vortex"); saldo = Number(r.data || 0); saldoErro = r.error;
+    } else if (clienteLogado?.id) {
+      const r = await db.rpc("saldo_disponivel_cliente", {p_cliente_id: clienteLogado.id}); saldo = Number(r.data || 0); saldoErro = r.error;
+    }
+
+    const repResp = await db.from("repasses_clientes").select("valor,status,criado_em").order("criado_em",{ascending:false}).limit(200);
+    const repassado = repResp.error ? 0 : (repResp.data || []).reduce((t,r)=>t+(String(r.status||"").toLowerCase()==="concluido"?Number(r.valor||0):0),0);
+
+    alvo.innerHTML = `<div class="vortex-module-grid"><div class="vortex-module-box"><div class="info">${usuarioEhAdmin ? "Saldo atual da Central" : "Saldo disponível para repasse"}</div><strong>${saldoErro ? "--" : moedaBR(saldo)}</strong></div><div class="vortex-module-box"><div class="info">PIX confirmados</div><strong>${moedaBR(bruto)}</strong></div><div class="vortex-module-box"><div class="info">Comissão VORTEX registrada</div><strong>${moedaBR(comissao)}</strong><div class="info">2,99% nas novas vendas</div></div><div class="vortex-module-box"><div class="info">Líquido dos clientes</div><strong>${moedaBR(liquido)}</strong></div><div class="vortex-module-box"><div class="info">Repasses concluídos</div><strong>${moedaBR(repassado)}</strong></div><div class="vortex-module-box"><div class="info">Mensalidade</div><strong>${moedaBR(50)}</strong><div class="info">Primeiro completa a mensalidade; excedente vira saldo.</div></div></div><div class="vortex-module-box"><strong>Extrato financeiro</strong><div class="info" style="margin-top:8px;">Na etapa do Supabase vamos consolidar vendas, comissão, mensalidade, repasses e retiradas em um extrato único.</div></div>`;
+  }
+
+  function prepararDatasRelatorioVortex() {
+    const ini = document.getElementById("relatorioDataInicioVortex");
+    const fim = document.getElementById("relatorioDataFimVortex");
+    if (!ini || !fim) return;
+    if (!fim.value) fim.value = new Date().toISOString().slice(0,10);
+    if (!ini.value) { const d = new Date(); d.setDate(1); ini.value = d.toISOString().slice(0,10); }
+  }
+
+  async function gerarRelatorioVortex() {
+    const alvo = document.getElementById("relatorioVortexResultado");
+    const inicio = document.getElementById("relatorioDataInicioVortex")?.value;
+    const fim = document.getElementById("relatorioDataFimVortex")?.value;
+    if (!alvo || !inicio || !fim) return;
+    alvo.innerHTML = '<div class="message">Gerando relatório...</div>';
+    const [pagResp,sessResp] = await Promise.all([
+      db.from("pagamentos").select("valor_bruto,comissao_vortex,status,pago_em,criado_em").eq("status","PAID").limit(1000),
+      db.from("sessoes").select("id,status,minutos_comprados,iniciado_em,criado_em").limit(1000)
+    ]);
+    const a = new Date(inicio+"T00:00:00").getTime(), b = new Date(fim+"T23:59:59").getTime();
+    const pags = (pagResp.error?[]:(pagResp.data||[])).filter(p=>{const t=new Date(p.pago_em||p.criado_em).getTime();return t>=a&&t<=b;});
+    const sessoes = (sessResp.error?[]:(sessResp.data||[])).filter(x=>{const t=new Date(x.iniciado_em||x.criado_em).getTime();return t>=a&&t<=b;});
+    const bruto=pags.reduce((t,p)=>t+Number(p.valor_bruto||0),0), com=pags.reduce((t,p)=>t+Number(p.comissao_vortex||0),0), min=sessoes.reduce((t,x)=>t+Number(x.minutos_comprados||0),0);
+    alvo.innerHTML=`<div class="vortex-module-grid"><div class="vortex-module-box"><div class="info">Vendas</div><strong>${pags.length}</strong></div><div class="vortex-module-box"><div class="info">Faturamento</div><strong>${moedaBR(bruto)}</strong></div><div class="vortex-module-box"><div class="info">Comissão VORTEX</div><strong>${moedaBR(com)}</strong></div><div class="vortex-module-box"><div class="info">Sessões</div><strong>${sessoes.length}</strong></div><div class="vortex-module-box"><div class="info">Minutos utilizados</div><strong>${min}</strong></div><div class="vortex-module-box"><div class="info">Período</div><strong>${inicio.split('-').reverse().join('/')} a ${fim.split('-').reverse().join('/')}</strong></div></div>`;
+  }
+
+  async function chaveLocalVortex(sufixo) {
+    const { data } = await db.auth.getUser();
+    return `vortex_${sufixo}_${data?.user?.id || "anon"}`;
+  }
+
+  async function salvarConfiguracoesLocaisVortex() {
+    const chave = await chaveLocalVortex("config");
+    const dados = {tipoPix:document.getElementById("configTipoPixVortex")?.value||"cpf_cnpj",chavePix:document.getElementById("configChavePixVortex")?.value||"",titular:document.getElementById("configTitularPixVortex")?.value||"",modo:document.getElementById("configModoCobrancaVortex")?.value||"fixo"};
+    localStorage.setItem(chave,JSON.stringify(dados));
+    const msg=document.getElementById("configMensagemVortex"); if(msg) msg.innerHTML='<span style="color:#22c55e;">✓ Rascunho salvo neste navegador. Depois vamos gravar no Supabase.</span>';
+  }
+
+  async function carregarConfiguracoesLocaisVortex() {
+    const chave=await chaveLocalVortex("config");
+    try { const d=JSON.parse(localStorage.getItem(chave)||"null"); if(!d)return; document.getElementById("configTipoPixVortex").value=d.tipoPix||"cpf_cnpj"; document.getElementById("configChavePixVortex").value=d.chavePix||""; document.getElementById("configTitularPixVortex").value=d.titular||""; document.getElementById("configModoCobrancaVortex").value=d.modo||"fixo"; } catch(e){console.error(e);}
+  }
+
+  async function salvarNotificacoesLocaisVortex() {
+    const chave=await chaveLocalVortex("notificacoes");
+    const d={pix:!!document.getElementById("notifPixVortex")?.checked,offline:!!document.getElementById("notifOfflineVortex")?.checked,mensalidade:!!document.getElementById("notifMensalidadeVortex")?.checked,repasse:!!document.getElementById("notifRepasseVortex")?.checked};
+    localStorage.setItem(chave,JSON.stringify(d));
+    const msg=document.getElementById("notifMensagemVortex"); if(msg) msg.innerHTML='<span style="color:#22c55e;">✓ Preferências salvas neste navegador.</span>';
+  }
+
+  async function carregarNotificacoesLocaisVortex() {
+    const chave=await chaveLocalVortex("notificacoes");
+    try { const d=JSON.parse(localStorage.getItem(chave)||"null"); if(!d)return; document.getElementById("notifPixVortex").checked=d.pix!==false; document.getElementById("notifOfflineVortex").checked=d.offline!==false; document.getElementById("notifMensalidadeVortex").checked=d.mensalidade!==false; document.getElementById("notifRepasseVortex").checked=d.repasse!==false; } catch(e){console.error(e);}
+  }
 
   /* SAIR */
 
