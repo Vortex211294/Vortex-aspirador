@@ -1055,6 +1055,121 @@
       text-align: right;
     }
 
+    .vortex-build-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 2px 0 14px;
+      padding: 7px 11px;
+      border-radius: 999px;
+      border: 1px solid #1c69aa;
+      background: rgba(8, 124, 255, .12);
+      color: #7ec8ff;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .25px;
+    }
+
+    .vortex-week-table-wrap {
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .vortex-week-table {
+      min-width: 820px;
+      display: grid;
+      grid-template-columns: repeat(7, minmax(112px, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .vortex-week-cell {
+      position: relative;
+      min-height: 148px;
+      padding: 13px;
+      border-radius: 12px;
+      border: 1px solid #174f82;
+      background: linear-gradient(180deg, #061d3c 0%, #04142d 100%);
+    }
+
+    .vortex-week-cell.hoje {
+      border-color: #25a6ff;
+      box-shadow: 0 0 0 1px rgba(37, 166, 255, .20), 0 10px 24px rgba(0, 92, 255, .12);
+    }
+
+    .vortex-week-cell.futuro {
+      opacity: .55;
+    }
+
+    .vortex-week-day {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: center;
+      color: #d9ecff;
+      font-weight: 900;
+      font-size: 13px;
+      text-transform: uppercase;
+    }
+
+    .vortex-week-date {
+      color: #7f9fbe;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .vortex-week-value {
+      margin-top: 14px;
+      color: #fff;
+      font-size: 20px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .vortex-week-meta {
+      margin-top: 7px;
+      color: #9db5ce;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .vortex-week-change {
+      margin-top: 10px;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .vortex-week-change.up { color: #31e28b; }
+    .vortex-week-change.down { color: #ff7c7c; }
+    .vortex-week-change.flat { color: #9db5ce; }
+
+    .vortex-week-summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin: 12px 0 4px;
+    }
+
+    .vortex-week-summary > div {
+      padding: 13px;
+      border-radius: 11px;
+      background: rgba(5, 26, 55, .82);
+      border: 1px solid rgba(39, 111, 173, .55);
+    }
+
+    .vortex-week-summary strong {
+      display: block;
+      margin-top: 5px;
+      color: #fff;
+      font-size: 18px;
+    }
+
+    @media (max-width: 760px) {
+      .vortex-week-summary {
+        grid-template-columns: 1fr;
+      }
+    }
+
     .vortex-pix-real {
       margin-top: 14px;
       padding: 18px;
@@ -1579,7 +1694,7 @@ class="admin-only"
           <section class="dash-panel">
 
             <h3>
-              ↗ Faturamento por dia
+              ↗ Faturamento — últimos 7 dias reais
             </h3>
 
             <div class="chart-box small">
@@ -1725,6 +1840,8 @@ class="admin-only"
             seus equipamentos.
           </p>
 
+          <div class="vortex-build-badge">✓ VERSÃO 05/10/2026 • SEMANA REAL SEG → DOM</div>
+
           <div class="equipment">
 
             <div class="info">
@@ -1783,6 +1900,18 @@ class="admin-only"
               R$ 0,00
             </strong>
 
+          </div>
+
+          <h3 class="vortex-section-title">
+            Semana atual — dados reais
+          </h3>
+
+          <div id="tabelaSemanaRealVortex" class="vortex-week-table-wrap">
+            <div class="message">Carregando semana real...</div>
+          </div>
+
+          <div class="vortex-week-caption" style="text-align:left;">
+            Seg a Dom • somente pagamentos PAID • a oscilação compara com o dia anterior.
           </div>
 
           <h3>
@@ -1859,6 +1988,7 @@ class="admin-only"
           </h2>
 
           <p class="info">Acompanhe os pagamentos recebidos e configure a cobrança PIX de cada equipamento.</p>
+          <div class="vortex-build-badge">✓ INDEX ATUALIZADO • GERAR QR CODE PIX • SEMANA SEG → DOM</div>
 
           <h3 class="vortex-section-title">Cobrança PIX por equipamento</h3>
           <div class="vortex-module-box">
@@ -2142,6 +2272,7 @@ class="admin-only"
     fecharMenuMobileVortex();
 
     if (pagina === "Controladores") carregarControladoresVortex();
+    if (pagina === "Faturamento") renderizarTabelaSemanaRealVortex();
     if (pagina === "Pix") carregarPixConfigVortex();
     if (pagina === "Financeiro") carregarFinanceiroModuloVortex();
     if (pagina === "Relatorios") prepararDatasRelatorioVortex();
@@ -2674,6 +2805,7 @@ if (btnClientesAdmin) {
 
     window.vortexPagamentosAtuais = pagamentosCliente;
     window.vortexEquipamentosAtuais = equipamentos || [];
+    renderizarTabelaSemanaRealVortex();
 
 
     let faturamentoHoje = 0;
@@ -4004,26 +4136,9 @@ if (btnClientesAdmin) {
             p.criado_em
           );
 
+        if (Number.isNaN(d.getTime())) return;
 
-        const chave =
-          `${d.getFullYear()}-${
-            String(
-              d.getMonth() + 1
-            )
-            .padStart(
-              2,
-              "0"
-            )
-          }-${
-            String(
-              d.getDate()
-            )
-            .padStart(
-              2,
-              "0"
-            )
-          }`;
-
+        const chave = chaveDataLocalVortex(d);
 
         porDia[chave] =
           (
@@ -4040,12 +4155,18 @@ if (btnClientesAdmin) {
       });
 
 
-    const dias =
-      Object
-        .keys(
-          porDia
-        )
-        .sort();
+    /* Últimos 7 dias reais, inclusive dias sem venda = zero */
+    const dias = [];
+    const baseGrafico = new Date();
+    baseGrafico.setHours(0,0,0,0);
+
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(baseGrafico);
+      d.setDate(baseGrafico.getDate() - i);
+      const chave = chaveDataLocalVortex(d);
+      dias.push(chave);
+      if (!(chave in porDia)) porDia[chave] = 0;
+    }
 
 
     const canvasDias =
@@ -4082,18 +4203,19 @@ if (btnClientesAdmin) {
                 dias
                   .map(d => {
 
-                    const partes =
-                      d.split("-");
+                    const partes = d.split("-");
+                    const dataLabel = new Date(`${d}T12:00:00`);
+                    const nomeDia = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"][dataLabel.getDay()];
 
-                    return (
-                      `${partes[2]}/${partes[1]}`
-                    );
+                    return `${nomeDia} ${partes[2]}/${partes[1]}`;
 
                   }),
 
               datasets: [
 
                 {
+
+                  label: "Faturamento real",
 
                   data:
                     dias
@@ -4998,6 +5120,118 @@ async function confirmarAcionamentoVortex() {
     const d = new Date(valorData); if (Number.isNaN(d.getTime())) return false;
     const ini = inicioSemanaVortex(); const fim = new Date(ini); fim.setDate(fim.getDate()+7);
     return d >= ini && d < fim && d.getDay() === Number(diaSemana);
+  }
+
+  function chaveDataLocalVortex(data) {
+    const d = new Date(data);
+    if (Number.isNaN(d.getTime())) return "";
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  }
+
+  function resumoOscilacaoVortex(atual, anterior) {
+    const a = Number(atual || 0);
+    const b = Number(anterior || 0);
+
+    if (b === 0 && a === 0) {
+      return { classe: "flat", texto: "0,0%" };
+    }
+
+    if (b === 0 && a > 0) {
+      return { classe: "up", texto: "↑ início de movimento" };
+    }
+
+    const pct = ((a - b) / b) * 100;
+    const sinal = pct > 0 ? "↑" : pct < 0 ? "↓" : "→";
+    return {
+      classe: pct > 0 ? "up" : pct < 0 ? "down" : "flat",
+      texto: `${sinal} ${Math.abs(pct).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`
+    };
+  }
+
+  function renderizarTabelaSemanaRealVortex() {
+    const alvo = document.getElementById("tabelaSemanaRealVortex");
+    if (!alvo) return;
+
+    const pagamentos = (window.vortexPagamentosAtuais || []).filter(
+      p => String(p.status || "PAID").toUpperCase() === "PAID"
+    );
+
+    const hoje = new Date();
+    hoje.setHours(0,0,0,0);
+    const inicio = inicioSemanaVortex(hoje);
+    const nomes = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
+
+    const totaisPorData = {};
+    const vendasPorData = {};
+    const minutosPorData = {};
+
+    pagamentos.forEach(p => {
+      const d = new Date(p.pago_em || p.criado_em || "");
+      if (Number.isNaN(d.getTime())) return;
+      const chave = chaveDataLocalVortex(d);
+      totaisPorData[chave] = (totaisPorData[chave] || 0) + Number(p.valor_bruto || 0);
+      vendasPorData[chave] = (vendasPorData[chave] || 0) + 1;
+      minutosPorData[chave] = (minutosPorData[chave] || 0) + Number(p.minutos || 0);
+    });
+
+    const dias = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(inicio);
+      d.setDate(inicio.getDate() + i);
+      d.setHours(0,0,0,0);
+      const chave = chaveDataLocalVortex(d);
+      dias.push({
+        data: d,
+        chave,
+        nome: nomes[i],
+        valor: Number(totaisPorData[chave] || 0),
+        vendas: Number(vendasPorData[chave] || 0),
+        minutos: Number(minutosPorData[chave] || 0),
+      });
+    }
+
+    let totalAtualAteHoje = 0;
+    let totalAnteriorMesmoPeriodo = 0;
+    const diaAtualSemana = Math.min(6, Math.max(0, ((hoje.getDay() + 6) % 7)));
+
+    for (let i = 0; i <= diaAtualSemana; i++) {
+      totalAtualAteHoje += dias[i]?.valor || 0;
+      const anterior = new Date(inicio);
+      anterior.setDate(inicio.getDate() - 7 + i);
+      const chaveAnterior = chaveDataLocalVortex(anterior);
+      totalAnteriorMesmoPeriodo += Number(totaisPorData[chaveAnterior] || 0);
+    }
+
+    const oscilacaoSemana = resumoOscilacaoVortex(totalAtualAteHoje, totalAnteriorMesmoPeriodo);
+
+    const resumo = `
+      <div class="vortex-week-summary">
+        <div><div class="info">Semana até hoje</div><strong>${moedaBR(totalAtualAteHoje)}</strong></div>
+        <div><div class="info">Semana anterior • mesmo período</div><strong>${moedaBR(totalAnteriorMesmoPeriodo)}</strong></div>
+        <div><div class="info">Oscilação real</div><strong class="vortex-week-change ${oscilacaoSemana.classe}" style="margin-top:5px;">${oscilacaoSemana.texto}</strong></div>
+      </div>`;
+
+    const celulas = dias.map((dia, i) => {
+      const futuro = dia.data.getTime() > hoje.getTime();
+      const ehHoje = dia.data.getTime() === hoje.getTime();
+      const anteriorValor = i > 0
+        ? dias[i-1].valor
+        : Number(totaisPorData[chaveDataLocalVortex(new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate()-1))] || 0);
+      const oscilacao = resumoOscilacaoVortex(dia.valor, anteriorValor);
+
+      return `
+        <div class="vortex-week-cell ${ehHoje ? "hoje" : ""} ${futuro ? "futuro" : ""}">
+          <div class="vortex-week-day">
+            <span>${dia.nome}</span>
+            <span class="vortex-week-date">${dia.data.toLocaleDateString("pt-BR", {day:"2-digit",month:"2-digit"})}</span>
+          </div>
+          <div class="vortex-week-value">${futuro ? "—" : moedaBR(dia.valor)}</div>
+          <div class="vortex-week-meta">${futuro ? "Aguardando" : `${dia.vendas} PIX • ${dia.minutos} min`}</div>
+          <div class="vortex-week-change ${futuro ? "flat" : oscilacao.classe}">${futuro ? "Ainda não ocorreu" : oscilacao.texto}</div>
+        </div>`;
+    }).join("");
+
+    alvo.innerHTML = `${resumo}<div class="vortex-week-table">${celulas}</div>`;
   }
 
   const filtroDiasAtivosVortex = {};
