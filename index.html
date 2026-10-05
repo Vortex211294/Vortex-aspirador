@@ -2171,23 +2171,31 @@ class="admin-only"
             VORTEX ASPIRADOR.
           </p>
 
-          <a
-            href="https://wa.me/5515998243092"
-            target="_blank"
+          <p
+            style="
+              margin-top:10px;
+              margin-bottom:6px;
+              color:#22c55e;
+              font-size:13px;
+              font-weight:700;
+            "
           >
-            <button type="button">
-              WhatsApp (15) 99824-3092
-            </button>
-          </a>
+            ✓ WHATSAPP DIRETO • VERSÃO MOBILE
+          </p>
 
-          <a
-            href="https://wa.me/5511977647233"
-            target="_blank"
+          <button
+            type="button"
+            onclick="abrirWhatsApp('5515998243092')"
           >
-            <button type="button">
-              WhatsApp (11) 97764-7233
-            </button>
-          </a>
+            WhatsApp (15) 99824-3092
+          </button>
+
+          <button
+            type="button"
+            onclick="abrirWhatsApp('5511977647233')"
+          >
+            WhatsApp (11) 97764-7233
+          </button>
 
         </div>
 
@@ -5367,6 +5375,49 @@ async function confirmarAcionamentoVortex() {
 
 
   verificarSessao();
+
+
+  // =====================================================
+  // SUPORTE WHATSAPP — ABERTURA DIRETA NO CELULAR
+  // =====================================================
+  function abrirWhatsApp(numero) {
+    const telefone = String(numero || "").replace(/\D/g, "");
+
+    if (!telefone) {
+      return;
+    }
+
+    const mensagem = encodeURIComponent(
+      "Olá! Preciso de suporte no VORTEX ASPIRADOR."
+    );
+
+    const urlWeb = `https://wa.me/${telefone}?text=${mensagem}`;
+    const urlApp = `whatsapp://send?phone=${telefone}&text=${mensagem}`;
+
+    const ehMobile = /Android|iPhone|iPad|iPod/i.test(
+      navigator.userAgent || ""
+    );
+
+    if (!ehMobile) {
+      window.open(urlWeb, "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    // No celular tenta abrir o aplicativo do WhatsApp diretamente.
+    // Caso o WhatsApp não esteja instalado, cai para o link web.
+    const iniciouEm = Date.now();
+    window.location.href = urlApp;
+
+    window.setTimeout(() => {
+      const ficouNaPagina =
+        document.visibilityState === "visible" &&
+        Date.now() - iniciouEm < 4000;
+
+      if (ficouNaPagina) {
+        window.location.href = urlWeb;
+      }
+    }, 1400);
+  }
 
 </script>
 <!-- MODAL REPASSE VORTEX -->
