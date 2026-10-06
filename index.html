@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VORTEX ASPIRADOR - PIX REAL PRODUCAO - 2026-10-05 -->
+<!-- VORTEX ASPIRADOR - revisão dos fluxos - 2026-10-06 -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
@@ -1202,6 +1202,8 @@
       word-break: break-all;
     }
 
+    button:disabled { opacity:.55; cursor:wait; }
+    button[title]:disabled { cursor:not-allowed; }
     .vortex-status-paid { color: #16e676; font-weight: 800; }
     .vortex-status-wait { color: #ffd36b; font-weight: 800; }
     .vortex-status-error { color: #ff7777; font-weight: 800; }
@@ -1235,18 +1237,18 @@
     <h2>Entrar</h2>
 
     <input
-      id="loginEmail"
+      id="loginEmail" autocomplete="username"
       type="email"
       placeholder="E-mail"
     >
 
     <input
-      id="loginSenha"
+      id="loginSenha" autocomplete="current-password"
       type="password"
       placeholder="Senha"
     >
 
-    <button onclick="login()">
+    <button id="btnLoginVortex" type="button" onclick="login()">
       ENTRAR
     </button>
 
@@ -1300,12 +1302,12 @@
     >
 
     <input
-      id="senha"
+      id="senha" autocomplete="new-password" minlength="6"
       type="password"
       placeholder="Crie uma senha"
     >
 
-    <button onclick="cadastrar()">
+    <button id="btnCadastroVortex" type="button" onclick="cadastrar()">
       CADASTRAR
     </button>
 
@@ -1825,7 +1827,7 @@ class="admin-only"
           <p class="info">Gerencie conexão, comandos, histórico e as futuras informações do ESP32.</p>
           <div class="vortex-module-grid">
             <div class="vortex-module-box"><div class="info">Comunicação</div><strong>Wi-Fi / Supabase</strong><div class="vortex-badge">Estrutura pronta</div></div>
-            <div class="vortex-module-box"><div class="info">Telemetria</div><strong>SSID, sinal, IP, MAC e firmware</strong><div class="vortex-badge pending">Aguardando ESP32</div></div>
+            <div class="vortex-module-box"><div class="info">Telemetria</div><strong>SSID, sinal, IP, MAC e firmware</strong><div class="vortex-badge pending">Aguardando controlador</div></div>
             <div class="vortex-module-box"><div class="info">Controle</div><strong>Acionamento e sincronização</strong><div class="vortex-badge">VORTEX</div></div>
           </div>
           <div id="listaControladoresVortex"><div class="message">Abra esta página para carregar os controladores.</div></div>
@@ -1999,16 +2001,16 @@ class="admin-only"
           </h2>
 
           <p class="info">Acompanhe os pagamentos recebidos e configure a cobrança PIX de cada equipamento.</p>
-          <div class="vortex-build-badge">✓ INDEX ATUALIZADO • PIX REAL • GRÁFICOS SEG → DOM</div>
+          <div class="vortex-build-badge">PIX POR EQUIPAMENTO • SEG → DOM</div>
 
           <h3 class="vortex-section-title">Cobrança PIX por equipamento</h3>
           <div class="vortex-module-box">
             <div class="vortex-row">
               <div class="vortex-field">
                 <label>Equipamento</label>
-                <select id="pixEquipamentoVortex"><option value="">Carregando equipamentos...</option></select>
+                <select id="pixEquipamentoVortex" onchange="atualizarCamposPixVortex()"><option value="">Carregando equipamentos...</option></select>
               </div>
-              <div><div class="info">Integração</div><strong>QR Code + TXID individual</strong><div class="vortex-badge">PagBank via Supabase Edge Function</div></div>
+              <div><div class="info">Integração</div><strong>QR Code + TXID individual</strong><div class="vortex-badge">PagBank</div></div>
             </div>
             <div class="vortex-tabs">
               <button type="button" id="btnPixFixoVortex" class="ativo" onclick="selecionarModoPixVortex('fixo')">Valor fixo</button>
@@ -2029,7 +2031,7 @@ class="admin-only"
               <p class="info">O usuário final escolhe os minutos. Cada escolha cria nova cobrança, novo TXID e novo QR Code.</p>
             </div>
             <div class="vortex-row" style="margin-top:12px;">
-              <div><button type="button" onclick="gerarPixRealVortex()" style="width:100%;padding:13px;">Gerar QR Code PIX</button></div>
+              <div><button type="button" id="btnGerarPixVortex" onclick="gerarPixRealVortex()" style="width:100%;padding:13px;">Gerar QR Code PIX</button></div>
               <div id="resumoPixVortex" class="vortex-qr-placeholder">Selecione o modo e clique em “Gerar QR Code PIX”.</div>
             </div>
           </div>
@@ -2060,10 +2062,10 @@ class="admin-only"
       <div id="paginaRelatorios" class="paginaVortex hidden"><div class="card"><h2>Relatórios</h2><p class="info">Consulte vendas, sessões e desempenho por período.</p><div class="vortex-row three"><div class="vortex-field"><label>Data inicial</label><input id="relatorioDataInicioVortex" type="date"></div><div class="vortex-field"><label>Data final</label><input id="relatorioDataFimVortex" type="date"></div><button type="button" onclick="gerarRelatorioVortex()" style="padding:13px;">Gerar relatório</button></div><div id="relatorioVortexResultado" style="margin-top:16px;"><div class="message">Escolha o período e gere o relatório.</div></div></div></div>
 
       <!-- CONFIGURAÇÕES -->
-      <div id="paginaConfiguracoes" class="paginaVortex hidden"><div class="card"><h2>Configurações</h2><p class="info">Dados financeiros e de recebimento. Informações sensíveis e tokens nunca ficam gravados no GitHub.</p><h3 class="vortex-section-title">Recebimento / PIX</h3><div class="vortex-module-box"><div class="vortex-row"><div class="vortex-field"><label>Tipo de chave PIX</label><select id="configTipoPixVortex"><option value="cpf_cnpj">CPF / CNPJ</option><option value="telefone">Telefone</option><option value="email">E-mail</option><option value="aleatoria">Chave aleatória</option></select></div><div class="vortex-field"><label>Chave PIX para repasse</label><input id="configChavePixVortex" type="text" placeholder="Informe a chave PIX"></div></div><div class="vortex-row"><div class="vortex-field"><label>Nome do titular</label><input id="configTitularPixVortex" type="text" placeholder="Nome do titular"></div><div class="vortex-field"><label>Modo padrão de cobrança</label><select id="configModoCobrancaVortex"><option value="fixo">Valor fixo</option><option value="minutos">Valor por minutos</option></select></div></div><div class="vortex-row"><div class="vortex-field"><label>Banco / instituição de recebimento</label><input id="configBancoVortex" type="text" placeholder="Ex.: PagBank"></div><div class="vortex-field"><label>Documento do titular</label><input id="configDocumentoTitularVortex" type="text" placeholder="CPF ou CNPJ"></div></div><div class="vortex-actions-wide"><button type="button" onclick="salvarConfiguracoesContaVortex()">Salvar dados de recebimento</button></div><div id="configMensagemVortex" class="message"></div></div><h3 class="vortex-section-title">Controlador</h3><div class="vortex-module-grid two"><div class="vortex-module-box"><div class="info">Atualização de firmware</div><strong>Remota / Central</strong><div class="vortex-badge pending">Aguardando ESP32</div></div><div class="vortex-module-box"><div class="info">Heartbeat</div><strong>Online/offline automático</strong><div class="vortex-badge pending">Aguardando ESP32</div></div></div></div></div>
+      <div id="paginaConfiguracoes" class="paginaVortex hidden"><div class="card"><h2>Configurações</h2><p class="info">Dados financeiros e de recebimento. Seus dados de recebimento ficam vinculados à sua conta.</p><h3 class="vortex-section-title">Recebimento / PIX</h3><div class="vortex-module-box"><div class="vortex-row"><div class="vortex-field"><label>Tipo de chave PIX</label><select id="configTipoPixVortex"><option value="cpf_cnpj">CPF / CNPJ</option><option value="telefone">Telefone</option><option value="email">E-mail</option><option value="aleatoria">Chave aleatória</option></select></div><div class="vortex-field"><label>Chave PIX para repasse</label><input id="configChavePixVortex" type="text" placeholder="Informe a chave PIX"></div></div><div class="vortex-row"><div class="vortex-field"><label>Nome do titular</label><input id="configTitularPixVortex" type="text" placeholder="Nome do titular"></div><div class="vortex-field"><label>Modo padrão de cobrança</label><select id="configModoCobrancaVortex"><option value="fixo">Valor fixo</option><option value="minutos">Valor por minutos</option></select></div></div><div class="vortex-row"><div class="vortex-field"><label>Banco / instituição de recebimento</label><input id="configBancoVortex" type="text" placeholder="Ex.: PagBank"></div><div class="vortex-field"><label>Documento do titular</label><input id="configDocumentoTitularVortex" type="text" placeholder="CPF ou CNPJ"></div></div><div class="vortex-actions-wide"><button type="button" onclick="salvarConfiguracoesContaVortex()">Salvar dados de recebimento</button></div><div id="configMensagemVortex" class="message"></div></div><h3 class="vortex-section-title">Controlador</h3><div class="vortex-module-grid two"><div class="vortex-module-box"><div class="info">Atualização de firmware</div><strong>Remota / Central</strong><div class="vortex-badge pending">Aguardando controlador</div></div><div class="vortex-module-box"><div class="info">Heartbeat</div><strong>Online/offline automático</strong><div class="vortex-badge pending">Aguardando controlador</div></div></div></div></div>
 
       <!-- NOTIFICAÇÕES -->
-      <div id="paginaNotificacoes" class="paginaVortex hidden"><div class="card"><h2>Notificações</h2><p class="info">Escolha quais avisos o VORTEX deverá enviar.</p><div class="vortex-module-box"><div class="vortex-switch-line"><div><strong>PIX recebido</strong><div class="info">Avisar a cada pagamento confirmado.</div></div><input id="notifPixVortex" type="checkbox" checked></div><div class="vortex-switch-line"><div><strong>Equipamento offline</strong><div class="info">Avisar quando o controlador parar de responder.</div></div><input id="notifOfflineVortex" type="checkbox" checked></div><div class="vortex-switch-line"><div><strong>Mensalidade</strong><div class="info">Avisar quando for quitada ou ficar pendente.</div></div><input id="notifMensalidadeVortex" type="checkbox" checked></div><div class="vortex-switch-line"><div><strong>Repasse</strong><div class="info">Avisar quando o repasse for registrado/concluído.</div></div><input id="notifRepasseVortex" type="checkbox" checked></div><div class="vortex-actions-wide"><button type="button" onclick="salvarNotificacoesLocaisVortex()">Salvar preferências</button></div><div id="notifMensagemVortex" class="message"></div></div></div></div>
+      <div id="paginaNotificacoes" class="paginaVortex hidden"><div class="card"><h2>Notificações</h2><p class="info">Preferências de avisos neste navegador. O envio automático depende da ativação do serviço de notificações.</p><div class="vortex-module-box"><div class="vortex-switch-line"><div><strong>PIX recebido</strong><div class="info">Avisar a cada pagamento confirmado.</div></div><input id="notifPixVortex" type="checkbox" checked></div><div class="vortex-switch-line"><div><strong>Equipamento offline</strong><div class="info">Avisar quando o controlador parar de responder.</div></div><input id="notifOfflineVortex" type="checkbox" checked></div><div class="vortex-switch-line"><div><strong>Mensalidade</strong><div class="info">Avisar quando for quitada ou ficar pendente.</div></div><input id="notifMensalidadeVortex" type="checkbox" checked></div><div class="vortex-switch-line"><div><strong>Repasse</strong><div class="info">Avisar quando o repasse for registrado/concluído.</div></div><input id="notifRepasseVortex" type="checkbox" checked></div><div class="vortex-actions-wide"><button type="button" onclick="salvarNotificacoesLocaisVortex()">Salvar preferências</button></div><div id="notifMensagemVortex" class="message"></div></div></div></div>
 
       <!-- MENSALIDADE -->
 
@@ -2223,16 +2225,81 @@ class="admin-only"
     "sb_publishable_2kdQbLws9nvdZQWHHp0fKg_Rlv88IOV";
 
   const db =
-    supabase.createClient(
+    window.supabase?.createClient(
       SUPABASE_URL,
       SUPABASE_KEY
-    );
+    ) || null;
 
 
   let usuarioEhAdmin = false;
   let clienteLogado = null;
   let clienteAdminSelecionado = null;
 
+
+
+  // Consultas sempre usam a conta atual; a autorização final continua no Supabase.
+  function consultaClienteVortex(tabela, colunas = "*") {
+    if (!clienteLogado) throw new Error("Entre na sua conta para continuar.");
+    let consulta = db.from(tabela).select(colunas);
+    if (!usuarioEhAdmin) consulta = consulta.eq("cliente_id", clienteLogado.id);
+    return consulta;
+  }
+
+  async function buscarTodosVortex(criarConsulta) {
+    const registros = [];
+    const tamanho = 100;
+    for (let inicio = 0; inicio < 100000; inicio += tamanho) {
+      const { data, error } = await criarConsulta().order("id", { ascending: true }).range(inicio, inicio + tamanho - 1);
+      if (error) return { data: null, error };
+      registros.push(...(data || []));
+      if (!data || data.length < tamanho) return { data: registros, error: null };
+    }
+    return { data: null, error: new Error("O período contém registros demais. Reduza o período consultado.") };
+  }
+
+  function argumentoJsVortex(valor) {
+    return escaparHtml(JSON.stringify(String(valor ?? "")));
+  }
+
+  function chaveDataBrasilVortex(valor = new Date()) {
+    const data = new Date(valor);
+    if (Number.isNaN(data.getTime())) return "";
+    const partes = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit"
+    }).formatToParts(data);
+    const campo = tipo => partes.find(p => p.type === tipo)?.value;
+    return `${campo("year")}-${campo("month")}-${campo("day")}`;
+  }
+
+  function dataCivilBrasilVortex(valor = new Date()) {
+    return new Date(chaveDataBrasilVortex(valor) + "T12:00:00");
+  }
+
+  function formatarDataVortex(valor) {
+    if (!valor || Number.isNaN(new Date(valor).getTime())) return "—";
+    return new Date(valor).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+  }
+
+  let painelCarregandoVortex = null;
+  async function abrirPainel() {
+    if (painelCarregandoVortex) return painelCarregandoVortex;
+    painelCarregandoVortex = (async () => {
+      try {
+        const carregado = await carregarPainelVortex();
+        if (carregado) document.getElementById("loginMsg").textContent = "";
+      } catch (erro) {
+        console.error(erro);
+        const msg = document.getElementById("loginMsg");
+        msg.textContent = "Não foi possível carregar o painel. Verifique a conexão e tente novamente.";
+        document.getElementById("painel").classList.add("hidden");
+        document.getElementById("loginBox").classList.remove("hidden");
+        document.querySelector(".container > .logo").classList.remove("hidden");
+        throw erro;
+      }
+    })();
+    try { await painelCarregandoVortex; }
+    finally { painelCarregandoVortex = null; }
+  }
 
   function abrirMenuMobileVortex() {
     if (window.innerWidth <= 760) {
@@ -2253,7 +2320,7 @@ class="admin-only"
   });
 
 
-  function abrirPagina(pagina) {
+  function abrirPagina(pagina, focoControlador = null) {
     if ((pagina === "Clientes" || pagina === "ClienteDetalhe") && !usuarioEhAdmin) {
       pagina = "Inicio";
     }
@@ -2290,7 +2357,7 @@ class="admin-only"
 
     fecharMenuMobileVortex();
 
-    if (pagina === "Controladores") carregarControladoresVortex();
+    if (pagina === "Controladores") carregarControladoresVortex(focoControlador);
     if (pagina === "Faturamento") renderizarTabelaSemanaRealVortex();
     if (pagina === "Pix") carregarPixConfigVortex();
     if (pagina === "Financeiro") carregarFinanceiroModuloVortex();
@@ -2327,152 +2394,62 @@ class="admin-only"
   }
 
 
-  async function cadastrar() {
-
-    const nome =
-      document
-        .getElementById("nome")
-        .value
-        .trim();
-
-    const cpf =
-      document
-        .getElementById("cpf")
-        .value
-        .trim();
-
-    const telefone =
-      document
-        .getElementById("telefone")
-        .value
-        .trim();
-
-    const endereco =
-      document
-        .getElementById("endereco")
-        .value
-        .trim();
-
-    const email =
-      document
-        .getElementById("email")
-        .value
-        .trim();
-
-    const senha =
-      document
-        .getElementById("senha")
-        .value;
-
-    const msg =
-      document
-        .getElementById(
-          "cadastroMsg"
-        );
-
-    if (!nome || !email || !senha) {
-
-      msg.innerText =
-        "Preencha nome, e-mail e senha.";
-
-      return;
-
-    }
-
-    msg.innerText =
-      "Criando conta...";
-
-    const { error } =
-      await db.auth.signUp({
-
-        email,
-
-        password: senha,
-
-        options: {
-
-          data: {
-
-            nome: nome,
-
-            cpf_cnpj: cpf,
-
-            telefone: telefone,
-
-            endereco: endereco
-
-          }
-
-        }
-
-      });
-
-    if (error) {
-
-      msg.innerText =
-        error.message;
-
-      return;
-
-    }
-
-    msg.innerText =
-      "Cadastro realizado. Confira seu e-mail para confirmar a conta.";
-
+async function cadastrar() {
+    const msg = document.getElementById("cadastroMsg");
+    const botao = document.getElementById("btnCadastroVortex");
+    if (botao.disabled) return;
+    const nome = document.getElementById("nome").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const senha = document.getElementById("senha").value;
+    if (!nome || !email || !senha) { msg.textContent = "Preencha nome, e-mail e senha."; return; }
+    if (!document.getElementById("email").checkValidity()) { msg.textContent = "Informe um e-mail válido."; return; }
+    if (senha.length < 6) { msg.textContent = "A senha deve ter pelo menos 6 caracteres."; return; }
+    botao.disabled = true;
+    msg.textContent = "Criando conta...";
+    try {
+      if (!db) throw new Error("Conexão indisponível. Recarregue a página.");
+      const { data, error } = await db.auth.signUp({ email, password: senha, options: {
+        emailRedirectTo: location.origin + location.pathname,
+        data: { nome, cpf_cnpj: document.getElementById("cpf").value.trim(),
+          telefone: document.getElementById("telefone").value.trim(), endereco: document.getElementById("endereco").value.trim() }
+      }});
+      if (error) throw error;
+      document.getElementById("senha").value = "";
+      if (data?.session) { await abrirPainel(); return; }
+      msg.textContent = "Cadastro realizado. Confira seu e-mail para confirmar a conta.";
+    } catch (erro) { msg.textContent = erro.message || "Não foi possível criar sua conta. Tente novamente."; }
+    finally { botao.disabled = false; }
   }
 
 
-  async function login() {
-
-    const email =
-      document
-        .getElementById(
-          "loginEmail"
-        )
-        .value
-        .trim();
-
-    const senha =
-      document
-        .getElementById(
-          "loginSenha"
-        )
-        .value;
-
-    const msg =
-      document
-        .getElementById(
-          "loginMsg"
-        );
-
-    msg.innerText =
-      "Entrando...";
-
-    const { error } =
-      await db.auth
-        .signInWithPassword({
-
-          email: email,
-
-          password: senha
-
-        });
-
-    if (error) {
-
-      msg.innerText =
-        "E-mail ou senha inválidos.";
-
-      return;
-
-    }
-
-    await abrirPainel();
-
+async function login() {
+    const botao = document.getElementById("btnLoginVortex");
+    const msg = document.getElementById("loginMsg");
+    if (botao.disabled) return;
+    const email = document.getElementById("loginEmail").value.trim();
+    const senha = document.getElementById("loginSenha").value;
+    if (!email || !senha) { msg.textContent = "Preencha e-mail e senha."; return; }
+    if (!document.getElementById("loginEmail").checkValidity()) { msg.textContent = "Informe um e-mail válido."; return; }
+    botao.disabled = true;
+    msg.textContent = "Entrando...";
+    try {
+      if (!db) throw new Error("Conexão indisponível. Recarregue a página.");
+      const { error } = await db.auth.signInWithPassword({ email, password: senha });
+      if (error) {
+        msg.textContent = error.code === "email_not_confirmed" ? "Confirme seu e-mail antes de entrar."
+          : error.code === "invalid_credentials" ? "E-mail ou senha inválidos."
+          : "Não foi possível entrar. Verifique a conexão e tente novamente.";
+        return;
+      }
+      document.getElementById("loginSenha").value = "";
+      await abrirPainel();
+    } catch (erro) { console.error(erro); if (!msg.textContent || msg.textContent === "Entrando...") msg.textContent = "Não foi possível entrar. Verifique a conexão e tente novamente."; }
+    finally { botao.disabled = false; }
   }
 
 
-  async function abrirPainel() {
+
+  async function carregarPainelVortex() {
 
     const { data: authData } =
       await db.auth.getUser();
@@ -2517,6 +2494,7 @@ class="admin-only"
     }
 
 
+    const primeiroAcesso = clienteLogado?.id !== cliente.id;
     clienteLogado = cliente;
     usuarioEhAdmin =
       String(cliente.tipo_usuario || "cliente").toLowerCase() === "admin";
@@ -2529,9 +2507,7 @@ if (btnClientesAdmin) {
 
     document.body.classList.toggle("admin-mode", usuarioEhAdmin);
     
-    if (!usuarioEhAdmin) {
-  abrirPagina("Inicio");
-}
+    if (primeiroAcesso) abrirPagina("Inicio");
 
     const tipoAcessoTopo = document.getElementById("tipoAcessoTopo");
     if (tipoAcessoTopo) {
@@ -2619,10 +2595,7 @@ if (btnClientesAdmin) {
 
     if (usuarioEhAdmin) {
       const { data: clientesAdmin, error: clientesAdminErro } =
-        await db
-          .from("clientes")
-          .select("id,nome,telefone,mensalidade,tipo_usuario,criado_em")
-          .order("criado_em", { ascending: false });
+        await buscarTodosVortex(() => db.from("clientes").select("id,nome,telefone,mensalidade,tipo_usuario,criado_em").order("criado_em", { ascending: false }));
 
       const listaClientesAdmin = document.getElementById("listaClientesAdmin");
       const resumoCentral = document.getElementById("resumoCentral");
@@ -2647,10 +2620,10 @@ if (btnClientesAdmin) {
                      tabindex="0"
                      onclick="abrirClienteAdmin('${c.id}')"
                      onkeydown="if(event.key === 'Enter') abrirClienteAdmin('${c.id}')">
-                  <strong>${c.nome || "Cliente VORTEX"}</strong>
-                  <div>Telefone: ${c.telefone || "-"}</div>
+                  <strong>${escaparHtml(c.nome || "Cliente VORTEX")}</strong>
+                  <div>Telefone: ${escaparHtml(c.telefone || "-")}</div>
                   <div>Mensalidade: ${Number(c.mensalidade || 50).toLocaleString("pt-BR", {style:"currency", currency:"BRL"})}</div>
-                  <div class="admin-badge">${String(c.tipo_usuario || "cliente").toUpperCase()}</div>
+                  <div class="admin-badge">${escaparHtml(String(c.tipo_usuario || "cliente").toUpperCase())}</div>
                 </div>
               `).join("")
             : '<div class="message">Nenhum cliente encontrado.</div>';
@@ -2660,10 +2633,12 @@ if (btnClientesAdmin) {
 
 
     /* FINANCEIRO CENTRAL VORTEX */
+    let saldoCentralDisponivel = null;
 
     if (usuarioEhAdmin) {
       const financeiroCentral = document.getElementById("financeiroCentralVortex");
       const { data: saldoCentral, error: saldoCentralErro } = await db.rpc("saldo_central_vortex");
+      if (!saldoCentralErro) saldoCentralDisponivel = Number(saldoCentral || 0);
 
       if (financeiroCentral) {
         financeiroCentral.innerHTML = `
@@ -2684,6 +2659,10 @@ if (btnClientesAdmin) {
     }
 
     /* MENSALIDADE */
+    document.getElementById("mensalidadeValor").textContent = moedaBR(cliente.mensalidade ?? 50);
+    document.getElementById("mensalidadeVencimento").textContent = "Vencimento: —";
+    document.getElementById("mensalidadeStatus").textContent = "Status: sem cobrança registrada";
+    document.getElementById("mensalidadePagoEm").textContent = "";
 
     const {
       data: mensalidade,
@@ -2704,6 +2683,7 @@ if (btnClientesAdmin) {
         .maybeSingle();
 
 
+    if (mensalidadeErro) document.getElementById("mensalidadeStatus").textContent = "Status: consulta indisponível";
     if (
       !mensalidadeErro &&
       mensalidade
@@ -2765,11 +2745,7 @@ if (btnClientesAdmin) {
       ) {
 
         pagoEm.innerText =
-          `Pago em: ${new Date(
-            mensalidade.pago_em
-          ).toLocaleString(
-            "pt-BR"
-          )}`;
+          `Pago em: ${formatarDataVortex(mensalidade.pago_em)}`;
 
       } else {
 
@@ -2782,41 +2758,23 @@ if (btnClientesAdmin) {
 
     /* EQUIPAMENTOS */
 
-    let consultaEquipamentos =
-      db
-        .from("equipamentos")
-        .select(
-          "id,codigo,nome,preco_minuto,status,tempo_minutos,valor_tempo,cliente_id,comando,tempo_acionamento_segundos,comando_criado_em,comando_recebido_em,acionamento_finalizado_em"
-        );
-
-    if (!usuarioEhAdmin) {
-      consultaEquipamentos =
-        consultaEquipamentos.eq("cliente_id", cliente.id);
-    }
-
     const {
       data: equipamentos,
       error
-    } = await consultaEquipamentos;
+    } = await buscarTodosVortex(() => {
+      let q = db.from("equipamentos").select("id,codigo,nome,preco_minuto,status,tempo_minutos,valor_tempo,cliente_id,comando,tempo_acionamento_segundos,comando_criado_em,comando_recebido_em,acionamento_finalizado_em");
+      return usuarioEhAdmin ? q : q.eq("cliente_id", cliente.id);
+    });
+    if (error) throw error;
 
 
     /* PAGAMENTOS */
 
-    let consultaPagamentos =
-      db
-        .from("pagamentos")
-        .select("*")
-        .eq("status", "PAID");
-
-    if (!usuarioEhAdmin) {
-      consultaPagamentos =
-        consultaPagamentos.eq("cliente_id", cliente.id);
-    }
-
     const {
       data: pagamentos,
       error: pagamentosErro
-    } = await consultaPagamentos;
+    } = await buscarTodosVortex(() => consultaClienteVortex("pagamentos").eq("status", "PAID"));
+    if (pagamentosErro) throw pagamentosErro;
 
 
     let pagamentosCliente =
@@ -2833,7 +2791,7 @@ if (btnClientesAdmin) {
 
     let totalPix = 0;
 
-    let saldoLiquido = 0;
+    let saldoLiquido = usuarioEhAdmin ? saldoCentralDisponivel : null;
 
     const faturamentoEquipamentos = {};
 
@@ -2904,16 +2862,11 @@ if (btnClientesAdmin) {
 
           const percentual =
             Number(
-              p.comissao_percentual
-            ) || 2.99;
-
-
-          const comissao =
-            valor *
-            (
-              percentual /
-              100
+              p.comissao_percentual ?? 2.99
             );
+
+
+          const comissao = p.comissao_vortex != null ? Number(p.comissao_vortex) : Math.round(valor * percentual) / 100;
 
 
           const valorCliente =
@@ -2945,7 +2898,7 @@ if (btnClientesAdmin) {
                 Equipamento:
                 ${
                   equipamentoPix
-                    ? equipamentoPix.nome
+                    ? escaparHtml(equipamentoPix.nome)
                     : "Não identificado"
                 }
               </div>
@@ -3013,10 +2966,7 @@ if (btnClientesAdmin) {
               <div>
                 Data:
                 ${
-                  dataPagamento
-                    .toLocaleString(
-                      "pt-BR"
-                    )
+                  formatarDataVortex(dataPagamento)
                 }
               </div>
 
@@ -3032,11 +2982,7 @@ if (btnClientesAdmin) {
 
 
         if (
-          dataPagamento.getFullYear() ===
-            agora.getFullYear() &&
-
-          dataPagamento.getMonth() ===
-            agora.getMonth()
+          chaveDataBrasilVortex(dataPagamento).slice(0, 7) === chaveDataBrasilVortex(agora).slice(0, 7)
         ) {
 
           faturamentoMes +=
@@ -3046,14 +2992,7 @@ if (btnClientesAdmin) {
 
 
         if (
-          dataPagamento.getFullYear() ===
-            agora.getFullYear() &&
-
-          dataPagamento.getMonth() ===
-            agora.getMonth() &&
-
-          dataPagamento.getDate() ===
-            agora.getDate()
+          chaveDataBrasilVortex(dataPagamento) === chaveDataBrasilVortex(agora)
         ) {
 
           faturamentoHoje +=
@@ -3078,7 +3017,7 @@ if (btnClientesAdmin) {
         saldoLiquido = Number(saldoRpc || 0);
       } else {
         console.error(saldoErro);
-        saldoLiquido = 0;
+        saldoLiquido = null;
       }
     }
 
@@ -3114,10 +3053,7 @@ if (btnClientesAdmin) {
               <div class="equipment">
 
                 <strong>
-                  ${
-                    e.nome ||
-                    "Aspirador VORTEX"
-                  }
+                  ${escaparHtml(e.nome || "Aspirador VORTEX")}
                 </strong>
 
                 <div>
@@ -3195,7 +3131,7 @@ if (btnClientesAdmin) {
         "saldoLiquido"
       )
       .innerText =
-        saldoLiquido
+        saldoLiquido === null ? "—" : saldoLiquido
           .toLocaleString(
             "pt-BR",
             {
@@ -3206,6 +3142,7 @@ if (btnClientesAdmin) {
 
 
     /* SESSÕES */
+    document.getElementById("listaSessoes").innerHTML = '<div class="message">Nenhuma sessão encontrada.</div>';
 
     const idsEquipamentos =
       (equipamentos || [])
@@ -3225,17 +3162,12 @@ if (btnClientesAdmin) {
         data: sessoes,
         error: sessoesErro
       } =
-        await db
-          .from("sessoes")
-          .select(
-            "id,equipamento_id,pagamento_id,minutos_comprados,status,iniciado_em,finalizado_em"
-          )
-          .in(
-            "equipamento_id",
-            idsEquipamentos
-          );
+        await buscarTodosVortex(() => db.from("sessoes")
+          .select("id,equipamento_id,pagamento_id,minutos_comprados,status,iniciado_em,finalizado_em,criado_em")
+          .in("equipamento_id", idsEquipamentos));
 
 
+      if (sessoesErro) throw sessoesErro;
       if (
         !sessoesErro &&
         sessoes
@@ -3273,23 +3205,13 @@ if (btnClientesAdmin) {
 
             const dataInicio =
               s.iniciado_em
-                ? new Date(
-                    s.iniciado_em
-                  )
-                  .toLocaleString(
-                    "pt-BR"
-                  )
+                ? formatarDataVortex(s.iniciado_em)
                 : "-";
 
 
             const dataFim =
               s.finalizado_em
-                ? new Date(
-                    s.finalizado_em
-                  )
-                  .toLocaleString(
-                    "pt-BR"
-                  )
+                ? formatarDataVortex(s.finalizado_em)
                 : "--";
 
 
@@ -3302,7 +3224,7 @@ if (btnClientesAdmin) {
                 );
 
 
-            const dataIsoSessao = (s.iniciado_em || s.finalizado_em || "");
+            const dataIsoSessao = (s.iniciado_em || s.criado_em || s.finalizado_em || "");
 
             listaSessoes
               .innerHTML += `
@@ -3310,10 +3232,7 @@ if (btnClientesAdmin) {
                 <div class="equipment" data-vortex-context="sessoes" data-vortex-date="${dataIsoSessao}">
 
                   <strong>
-                    ${
-                      equipamento?.nome ||
-                      "Aspirador VORTEX"
-                    }
+                    ${escaparHtml(equipamento?.nome || "Aspirador VORTEX")}
                   </strong>
 
                   <div>
@@ -3354,10 +3273,8 @@ if (btnClientesAdmin) {
 
                   <div>
                     Status:
-                    ${
-                      s.status ||
-                      "-"
-                    }
+                    ${escaparHtml(s.status ||
+                      "-")}
                   </div>
 
                 </div>
@@ -3423,6 +3340,8 @@ if (btnClientesAdmin) {
     }
 
 
+    document.getElementById("listaEquipamentosPagina").innerHTML = '<div class="message">Nenhum equipamento cadastrado.</div>';
+
     if (
       !equipamentos ||
       equipamentos.length === 0
@@ -3438,8 +3357,8 @@ if (btnClientesAdmin) {
         faturamentoHoje,
         faturamentoMes
       );
-
-      return;
+      reaplicarFiltrosVortex();
+      return true;
 
     }
 
@@ -3474,15 +3393,12 @@ if (btnClientesAdmin) {
         <div class="equipment">
 
           <strong>
-            ${
-              e.nome ||
-              "Aspirador VORTEX"
-            }
+            ${escaparHtml(e.nome || "Aspirador VORTEX")}
           </strong>
 
           <div>
             Código:
-            ${e.codigo}
+            ${escaparHtml(e.codigo)}
           </div>
 
           <div>
@@ -3524,15 +3440,12 @@ if (btnClientesAdmin) {
           <div class="equipment">
 
             <strong>
-              ${
-                e.nome ||
-                "Aspirador VORTEX"
-              }
+              ${escaparHtml(e.nome || "Aspirador VORTEX")}
             </strong>
 
             <div>
               Código:
-              ${e.codigo}
+              ${escaparHtml(e.codigo)}
             </div>
 
             <div>
@@ -3628,7 +3541,7 @@ if (btnClientesAdmin) {
             <button
               type="button"
               class="secondary"
-              onclick="acionarEquipamento('${e.id}', '${String(e.nome || "Aspirador VORTEX").replace(/'/g, "\\'")}')"
+              onclick="acionarEquipamento('${e.id}')"
               style="
                 margin-top:10px;
                 width:100%;
@@ -3643,7 +3556,7 @@ if (btnClientesAdmin) {
             </button>
 
             <div class="info" style="margin-top:10px;">
-              Comando: ${e.comando || "aguardando"}
+              Comando: ${escaparHtml(e.comando || "aguardando")}
             </div>
 
             <div
@@ -3676,7 +3589,8 @@ if (btnClientesAdmin) {
       faturamentoHoje,
       faturamentoMes
     );
-
+    reaplicarFiltrosVortex();
+    return true;
   }
 
 
@@ -3826,10 +3740,7 @@ if (btnClientesAdmin) {
                 <div>
 
                   <strong>
-                    ${
-                      e.nome ||
-                      "Aspirador VORTEX"
-                    }
+                    ${escaparHtml(e.nome || "Aspirador VORTEX")}
                   </strong>
 
                   <span
@@ -3941,10 +3852,7 @@ if (btnClientesAdmin) {
                   </span>
 
                   <span>
-                    ${
-                      eq?.nome ||
-                      "VORTEX"
-                    }
+                    ${escaparHtml(eq?.nome || "VORTEX")}
                   </span>
 
                   <span>
@@ -4023,7 +3931,7 @@ if (btnClientesAdmin) {
 
         if (Number.isNaN(d.getTime())) return;
 
-        const chave = chaveDataLocalVortex(d);
+        const chave = chaveDataBrasilVortex(d);
 
         porDia[chave] =
           (
@@ -4042,7 +3950,7 @@ if (btnClientesAdmin) {
 
     /* Semana atual fixa: sempre começa na segunda e termina no domingo */
     const dias = [];
-    const inicioGrafico = inicioSemanaVortex(new Date());
+    const inicioGrafico = inicioSemanaVortex();
 
     for (let i = 0; i < 7; i++) {
       const d = new Date(inicioGrafico);
@@ -4243,14 +4151,10 @@ if (btnClientesAdmin) {
         .select("id,nome,telefone,mensalidade,tipo_usuario,ativo,criado_em")
         .eq("id", clienteId)
         .single(),
-      db.from("equipamentos")
+      buscarTodosVortex(() => db.from("equipamentos")
         .select("id,codigo,nome,preco_minuto,status,tempo_minutos,valor_tempo,cliente_id,comando,tempo_acionamento_segundos,comando_criado_em,comando_recebido_em,acionamento_finalizado_em")
-        .eq("cliente_id", clienteId),
-      db.from("pagamentos")
-        .select("*")
-        .eq("cliente_id", clienteId)
-        .eq("status", "PAID")
-        .order("criado_em", { ascending: false }),
+        .eq("cliente_id", clienteId)),
+      buscarTodosVortex(() => db.from("pagamentos").select("*").eq("cliente_id", clienteId).eq("status", "PAID").order("criado_em", { ascending: false })),
       db.from("mensalidades")
         .select("*")
         .eq("cliente_id", clienteId)
@@ -4258,13 +4162,10 @@ if (btnClientesAdmin) {
         .limit(1)
         .maybeSingle(),
       db.rpc("saldo_disponivel_cliente", { p_cliente_id: clienteId }),
-      db.from("repasses_clientes")
-        .select("id,valor,status,descricao,criado_em")
-        .eq("cliente_id", clienteId)
-        .order("criado_em", { ascending: false })
-        .limit(20)
+      buscarTodosVortex(() => db.from("repasses_clientes").select("id,valor,status,descricao,criado_em").eq("cliente_id", clienteId).order("criado_em", { ascending: false }))
     ]);
 
+    if (clienteAdminSelecionado !== clienteId) return;
     if (clienteResp.error || !clienteResp.data) {
       console.error(clienteResp.error);
       infoEl.innerText = "Não foi possível carregar este cliente.";
@@ -4275,23 +4176,23 @@ if (btnClientesAdmin) {
     const cliente = clienteResp.data;
     const equipamentos = equipamentosResp.data || [];
     const pagamentos = pagamentosResp.data || [];
+    if (pagamentosResp.error) { infoEl.textContent = "Não foi possível carregar o financeiro completo deste cliente. Tente novamente."; return; }
     const mensalidade = mensalidadeResp.data || null;
     const agora = new Date();
 
     const faturamentoHoje = pagamentos.reduce((total, p) => {
       const d = new Date(p.pago_em || p.criado_em);
-      const hoje = d.getFullYear() === agora.getFullYear() &&
-        d.getMonth() === agora.getMonth() && d.getDate() === agora.getDate();
+      const hoje = chaveDataBrasilVortex(d) === chaveDataBrasilVortex(agora);
       return total + (hoje ? Number(p.valor_bruto || 0) : 0);
     }, 0);
 
     const faturamentoMes = pagamentos.reduce((total, p) => {
       const d = new Date(p.pago_em || p.criado_em);
-      const mesmoMes = d.getFullYear() === agora.getFullYear() && d.getMonth() === agora.getMonth();
+      const mesmoMes = chaveDataBrasilVortex(d).slice(0,7) === chaveDataBrasilVortex(agora).slice(0,7);
       return total + (mesmoMes ? Number(p.valor_bruto || 0) : 0);
     }, 0);
 
-    const saldoDisponivel = saldoResp.error ? 0 : Number(saldoResp.data || 0);
+    const saldoDisponivel = saldoResp.error ? null : Number(saldoResp.data || 0);
     const repasses = repassesResp.error ? [] : (repassesResp.data || []);
     const totalRepassado = repasses.reduce((total, r) =>
       total + (String(r.status || "").toLowerCase() === "concluido" ? Number(r.valor || 0) : 0), 0);
@@ -4301,13 +4202,14 @@ if (btnClientesAdmin) {
     let sessoes = [];
 
     if (ids.length) {
-      const sessoesResp = await db.from("sessoes")
+      const sessoesResp = await buscarTodosVortex(() => db.from("sessoes")
         .select("id,equipamento_id,pagamento_id,minutos_comprados,status,iniciado_em,finalizado_em,criado_em")
-        .in("equipamento_id", ids)
-        .order("criado_em", { ascending: false });
+        .in("equipamento_id", ids).order("criado_em", { ascending: false }));
       if (!sessoesResp.error) sessoes = sessoesResp.data || [];
+      else { infoEl.textContent = "Não foi possível carregar as sessões deste cliente. Tente novamente."; return; }
     }
 
+    if (clienteAdminSelecionado !== clienteId) return;
     nomeEl.innerText = cliente.nome || "Cliente VORTEX";
     infoEl.innerText = `Telefone: ${cliente.telefone || "-"} • ${cliente.ativo === false ? "Inativo" : "Ativo"}`;
 
@@ -4316,7 +4218,7 @@ if (btnClientesAdmin) {
       <div class="equipment"><div class="info">Faturamento do mês</div><strong>${moedaBR(faturamentoMes)}</strong></div>
       <div class="equipment"><div class="info">Sessões</div><strong>${sessoes.length}</strong></div>
       <div class="equipment"><div class="info">Equipamentos online</div><strong>${online} de ${equipamentos.length}</strong></div>
-      <div class="equipment"><div class="info">Saldo disponível</div><strong>${moedaBR(saldoDisponivel)}</strong></div>
+      <div class="equipment"><div class="info">Saldo disponível</div><strong>${saldoDisponivel === null ? "—" : moedaBR(saldoDisponivel)}</strong></div>
       <div class="equipment"><div class="info">Mensalidade</div><strong>${moedaBR(cliente.mensalidade || 50)}</strong></div>
       <div class="equipment"><div class="info">Status mensalidade</div><strong>${escaparHtml(mensalidade?.status || "--")}</strong></div>
     `;
@@ -4328,7 +4230,7 @@ if (btnClientesAdmin) {
               <strong>${moedaBR(r.valor)}</strong>
               <div>Status: ${escaparHtml(r.status || "-")}</div>
               <div>${escaparHtml(r.descricao || "Repasse ao cliente")}</div>
-              <div class="info">${r.criado_em ? new Date(r.criado_em).toLocaleString("pt-BR") : "-"}</div>
+              <div class="info">${r.criado_em ? formatarDataVortex(r.criado_em) : "-"}</div>
             </div>
           `).join("")
         : '<div class="message">Nenhum repasse registrado para este cliente.</div>';
@@ -4337,15 +4239,15 @@ if (btnClientesAdmin) {
         <div class="cliente-detalhe-grid">
           <div class="equipment">
             <div class="info">Disponível para repasse</div>
-            <strong>${moedaBR(saldoDisponivel)}</strong>
+            <strong>${saldoDisponivel === null ? "—" : moedaBR(saldoDisponivel)}</strong>
           </div>
           <div class="equipment">
             <div class="info">Total já repassado</div>
-            <strong>${moedaBR(totalRepassado)}</strong>
+            <strong>${repassesResp.error ? "—" : moedaBR(totalRepassado)}</strong>
           </div>
         </div>
         <div class="vortex-actions">
-          <button type="button" onclick="abrirModalRepasseVortex('${cliente.id}', '${String(cliente.nome || "Cliente VORTEX").replace(/'/g, "\\'")}', ${saldoDisponivel})">Registrar repasse</button>
+          <button type="button" ${saldoDisponivel === null ? "disabled" : ""} onclick="abrirModalRepasseVortex('${cliente.id}', ${argumentoJsVortex(cliente.nome || "Cliente VORTEX")}, ${saldoDisponivel})">Registrar repasse</button>
         </div>
         <div id="mensagemRepasseCliente" class="message"></div>
         <h3 style="margin-top:22px;">Histórico de repasses</h3>
@@ -4354,7 +4256,7 @@ if (btnClientesAdmin) {
     }
 
     if (saldoResp.error) console.error(saldoResp.error);
-    if (repassesResp.error) console.error(repassesResp.error);
+    if (repassesResp.error) { console.error(repassesResp.error); financeiroEl.insertAdjacentHTML("beforeend", '<div class="message">Histórico de repasses indisponível.</div>'); }
 
     if (equipamentosResp.error) {
       equipamentosEl.innerHTML = '<div class="message">Não foi possível carregar os equipamentos.</div>';
@@ -4382,7 +4284,7 @@ if (btnClientesAdmin) {
 
             <div class="vortex-actions">
               <button type="button" onclick="salvarConfiguracaoAdmin('${e.id}')">Salvar configuração</button>
-              <button type="button" class="secondary" onclick="acionarEquipamento('${e.id}', '${String(e.nome || "Aspirador VORTEX").replace(/'/g, "\\'")}')">Acionar remotamente</button>
+              <button type="button" class="secondary" onclick="acionarEquipamento('${e.id}')">Acionar remotamente</button>
               <button type="button" class="secondary" onclick="abrirControladorDoEquipamentoVortex('${e.id}')">Painel do controlador</button>
             </div>
             <div id="admin-mensagem-${e.id}" class="message"></div>
@@ -4394,7 +4296,7 @@ if (btnClientesAdmin) {
     pixEl.innerHTML = pagamentos.length
       ? pagamentos.slice(0, 20).map(p => {
           const eq = equipamentos.find(e => e.id === p.equipamento_id);
-          const data = new Date(p.pago_em || p.criado_em).toLocaleString("pt-BR");
+          const data = formatarDataVortex(p.pago_em || p.criado_em);
           return `<div class="equipment"><strong>PIX recebido</strong><div>Equipamento: ${escaparHtml(eq?.nome || "Não identificado")}</div><div>Valor: ${moedaBR(p.valor_bruto)}</div><div>Minutos: ${p.minutos || 0}</div><div>Data: ${data}</div><div class="online">● PAGO</div></div>`;
         }).join("")
       : '<div class="message">Nenhum PIX recebido por este cliente.</div>';
@@ -4404,48 +4306,14 @@ if (btnClientesAdmin) {
     sessoesEl.innerHTML = sessoes.length
       ? sessoes.slice(0, 30).map(sessao => {
           const eq = equipamentos.find(e => e.id === sessao.equipamento_id);
-          return `<div class="equipment"><strong>${escaparHtml(eq?.nome || "Aspirador VORTEX")}</strong><div>Minutos: ${sessao.minutos_comprados || 0}</div><div>Status: ${escaparHtml(sessao.status || "-")}</div><div>Início: ${sessao.iniciado_em ? new Date(sessao.iniciado_em).toLocaleString("pt-BR") : "-"}</div><div>Fim: ${sessao.finalizado_em ? new Date(sessao.finalizado_em).toLocaleString("pt-BR") : "--"}</div></div>`;
+          return `<div class="equipment"><strong>${escaparHtml(eq?.nome || "Aspirador VORTEX")}</strong><div>Minutos: ${sessao.minutos_comprados || 0}</div><div>Status: ${escaparHtml(sessao.status || "-")}</div><div>Início: ${sessao.iniciado_em ? formatarDataVortex(sessao.iniciado_em) : "-"}</div><div>Fim: ${sessao.finalizado_em ? formatarDataVortex(sessao.finalizado_em) : "--"}</div></div>`;
         }).join("")
       : '<div class="message">Nenhuma sessão encontrada para este cliente.</div>';
   }
 
-  async function salvarConfiguracaoAdmin(equipamentoId) {
-    if (!usuarioEhAdmin) return;
 
-    const tempo = Number(document.getElementById(`admin-tempo-${equipamentoId}`)?.value);
-    const valor = Number(document.getElementById(`admin-valor-${equipamentoId}`)?.value);
-    const mensagem = document.getElementById(`admin-mensagem-${equipamentoId}`);
-
-    if (tempo < 1 || valor < 0 || !Number.isFinite(tempo) || !Number.isFinite(valor)) {
-      alert("Informe um tempo e um valor válidos.");
-      return;
-    }
-
-    if (mensagem) mensagem.innerText = "Salvando...";
-
-  const { error } = await db.rpc(
-  "salvar_configuracao_equipamento",
-  {
-    p_equipamento_id: equipamentoId,
-    p_tempo_minutos: tempo,
-    p_valor_tempo: valor
-  }
-);
-
-    if (error) {
-      console.error(error);
-      if (mensagem) mensagem.innerText = "Supabase ainda não liberou esta alteração para a Central.";
-      return;
-    }
-
-    if (mensagem) {
-  mensagem.innerText = "✓ Configuração salva com sucesso!";
-  mensagem.style.color = "#22c55e";
-
-  setTimeout(() => {
-    mensagem.innerText = "";
-  }, 3000);
-}
+async function salvarConfiguracaoAdmin(equipamentoId) {
+    await salvarConfiguracaoVortex(equipamentoId, true);
   }
 
   let repasseClienteId = null;
@@ -4462,6 +4330,7 @@ if (btnClientesAdmin) {
     document.getElementById("valorRepasseVortex").value = "";
     document.getElementById("descricaoRepasseVortex").value = "Repasse ao cliente";
     document.getElementById("mensagemRepasseVortex").textContent = "";
+    document.getElementById("btnConfirmarRepasseVortex").textContent = "Confirmar repasse";
     document.getElementById("modalRepasseVortex").style.display = "flex";
   }
 
@@ -4472,7 +4341,7 @@ if (btnClientesAdmin) {
   }
 
   async function confirmarRepasseVortex() {
-    if (!usuarioEhAdmin || !repasseClienteId) return;
+    if (!usuarioEhAdmin || !repasseClienteId || document.getElementById("btnConfirmarRepasseVortex").disabled) return;
 
     const valor = Number(document.getElementById("valorRepasseVortex").value);
     const descricao = document.getElementById("descricaoRepasseVortex").value.trim() || "Repasse ao cliente";
@@ -4493,11 +4362,13 @@ if (btnClientesAdmin) {
     botao.textContent = "Registrando...";
     mensagem.textContent = "Registrando repasse...";
 
-    const { error } = await db.rpc("registrar_repasse_cliente", {
-      p_cliente_id: repasseClienteId,
-      p_valor: valor,
+    const clienteIdRegistro = repasseClienteId;
+    let error;
+    try { ({ error } = await db.rpc("registrar_repasse_cliente", {
+      p_cliente_id: clienteIdRegistro,
+      p_valor: Math.round(valor * 100) / 100,
       p_descricao: descricao
-    });
+    })); } catch (erro) { error = erro; }
 
     if (error) {
       console.error(error);
@@ -4510,12 +4381,13 @@ if (btnClientesAdmin) {
     mensagem.textContent = "✓ Repasse registrado com sucesso.";
     botao.textContent = "Registrado";
 
-    const clienteIdAtual = repasseClienteId;
+    const clienteIdAtual = clienteIdRegistro;
     setTimeout(async () => {
+      if (repasseClienteId !== clienteIdAtual) { botao.disabled = false; botao.textContent = "Confirmar repasse"; return; }
       fecharModalRepasseVortex();
       botao.disabled = false;
       botao.textContent = "Confirmar repasse";
-      await abrirClienteAdmin(clienteIdAtual);
+      try { await abrirClienteAdmin(clienteIdAtual); } catch (erro) { console.error(erro); }
     }, 1000);
   }
 
@@ -4524,8 +4396,8 @@ let equipamentoAcionamentoNome = "";
 
 function acionarEquipamento(equipamentoId, nomeEquipamento) {
   equipamentoAcionamentoId = equipamentoId;
-  equipamentoAcionamentoNome =
-    nomeEquipamento || "Aspirador VORTEX";
+  equipamentoAcionamentoNome = nomeEquipamento ||
+    [...(window.vortexEquipamentosAtuais || []), ...controladoresCacheVortex].find(e => e.id === equipamentoId)?.nome || "Aspirador VORTEX";
 
   const modal = document.getElementById("modalAcionamentoVortex");
   const titulo = document.getElementById("nomeEquipamentoAcionamento");
@@ -4535,6 +4407,7 @@ function acionarEquipamento(equipamentoId, nomeEquipamento) {
   titulo.textContent = equipamentoAcionamentoNome;
   tempo.value = "2";
   mensagem.textContent = "";
+  document.getElementById("btnConfirmarAcionamentoVortex").textContent = "Acionar equipamento";
 
   modal.style.display = "flex";
 }
@@ -4548,235 +4421,114 @@ function fecharModalAcionamento() {
   equipamentoAcionamentoNome = "";
 }
 
+
 async function confirmarAcionamentoVortex() {
-  const minutos = Number(
-    document.getElementById("tempoAcionamentoVortex").value
-  );
-
-  const mensagem = document.getElementById(
-    "mensagemAcionamentoVortex"
-  );
-
-  const botao = document.getElementById(
-    "btnConfirmarAcionamentoVortex"
-  );
-
-  if (!Number.isFinite(minutos) || minutos < 1 || minutos > 120) {
-    mensagem.textContent =
-      "Informe um tempo entre 1 e 120 minutos.";
-    return;
+    const mensagem = document.getElementById("mensagemAcionamentoVortex");
+    const botao = document.getElementById("btnConfirmarAcionamentoVortex");
+    if (botao.disabled) return;
+    const minutos = Number(document.getElementById("tempoAcionamentoVortex").value);
+    const equipamentoId = equipamentoAcionamentoId;
+    if (!Number.isInteger(minutos) || minutos < 1 || minutos > 120) { mensagem.textContent = "Informe um tempo inteiro entre 1 e 120 minutos."; return; }
+    if (!equipamentoId) { mensagem.textContent = "Equipamento não encontrado."; return; }
+    botao.disabled = true; botao.textContent = "Enviando...";
+    mensagem.textContent = "Enviando comando ao equipamento...";
+    try {
+      const { error } = await db.rpc("acionar_equipamento_remoto", { p_equipamento_id: equipamentoId, p_tempo_segundos: minutos * 60 });
+      if (error) throw error;
+      if (equipamentoAcionamentoId !== equipamentoId) return;
+      mensagem.textContent = "✓ Comando enviado. Aguarde a confirmação do controlador.";
+      botao.textContent = "Comando enviado";
+      setTimeout(async () => {
+        if (equipamentoAcionamentoId !== equipamentoId) return;
+        fecharModalAcionamento();
+        try { if (usuarioEhAdmin && clienteAdminSelecionado) await abrirClienteAdmin(clienteAdminSelecionado); else await abrirPainel(); }
+        catch (erro) { console.error(erro); }
+      }, 1200);
+    } catch (erro) {
+      console.error(erro);
+      if (equipamentoAcionamentoId === equipamentoId) mensagem.textContent = "Não foi possível enviar o comando: " + (erro.message || "Tente novamente.");
+    } finally { botao.disabled = false; if (botao.textContent === "Enviando...") botao.textContent = "Acionar equipamento"; }
   }
-
-  if (!equipamentoAcionamentoId) {
-    mensagem.textContent =
-      "Equipamento não encontrado.";
-    return;
-  }
-
-  botao.disabled = true;
-  botao.textContent = "Enviando...";
-  mensagem.textContent =
-    "Enviando comando ao equipamento...";
-
-  const { error } = await db.rpc(
-    "acionar_equipamento_remoto",
-    {
-      p_equipamento_id: equipamentoAcionamentoId,
-      p_tempo_segundos: Math.round(minutos * 60)
-    }
-  );
-
-  if (error) {
-    console.error(error);
-
-    mensagem.textContent =
-      "Não foi possível acionar o equipamento: " +
-      error.message;
-
-    botao.disabled = false;
-    botao.textContent = "Acionar equipamento";
-    return;
-  }
-
-  mensagem.textContent =
-    "✓ Comando enviado ao equipamento.";
-
-  botao.textContent = "Comando enviado";
-
-  setTimeout(async () => {
-    fecharModalAcionamento();
-
-    botao.disabled = false;
-    botao.textContent = "Acionar equipamento";
-
-    if (usuarioEhAdmin && clienteAdminSelecionado) {
-      await abrirClienteAdmin(clienteAdminSelecionado);
-    } else {
-      await abrirPainel();
-      abrirPagina("Equipamentos");
-    }
-  }, 1200);
-}
 
   /* SALVAR CONFIGURAÇÃO */
 
-  async function salvarConfiguracao(
-    equipamentoId
-  ) {
 
-    const tempo =
-      Number(
-        document
-          .getElementById(
-            `tempo-${equipamentoId}`
-          )
-          .value
-      );
-
-
-    const valor =
-      Number(
-        document
-          .getElementById(
-            `valor-${equipamentoId}`
-          )
-          .value
-      );
-
-
-    if (
-      tempo < 1 ||
-      valor < 0
-    ) {
-
-      alert(
-        "Informe um tempo e um valor válidos."
-      );
-
-      return;
-
-    }
-
-
-   const { error } = await db.rpc(
-  "salvar_configuracao_equipamento",
-  {
-    p_equipamento_id: equipamentoId,
-    p_tempo_minutos: tempo,
-    p_valor_tempo: valor
-  }
-);
-
-
-    if (
-      error
-    ) {
-
-      alert(
-        "Erro ao salvar configuração."
-      );
-
-      console.error(
-        error
-      );
-
-      return;
-
-    }
-
-
-    const mensagem =
-      document
-        .getElementById(
-          `mensagem-${equipamentoId}`
-        );
-
-
-    mensagem.innerHTML =
-      "✓ Configuração salva com sucesso!";
-
-
-    mensagem.style.color =
-      "#22c55e";
-
-
-    mensagem.style.marginTop =
-      "10px";
-
-
-    setTimeout(
-      () => {
-
-        mensagem.innerHTML =
-          "";
-
-      },
-      3000
-    );
-
+async function salvarConfiguracao(equipamentoId) {
+    await salvarConfiguracaoVortex(equipamentoId, false);
   }
 
-
+  async function salvarConfiguracaoVortex(equipamentoId, admin) {
+    if (admin && !usuarioEhAdmin) return;
+    const prefixo = admin ? "admin-" : "";
+    const tempo = Number(document.getElementById(`${prefixo}tempo-${equipamentoId}`)?.value);
+    const valor = Number(document.getElementById(`${prefixo}valor-${equipamentoId}`)?.value);
+    const mensagem = document.getElementById(`${prefixo}mensagem-${equipamentoId}`);
+    if (!mensagem || mensagem.dataset.salvando === "1") return;
+    if (!Number.isSafeInteger(tempo) || tempo < 1 || !Number.isFinite(valor) || valor < 0.01) {
+      mensagem.textContent = "Informe minutos inteiros e um valor maior que zero."; return;
+    }
+    mensagem.dataset.salvando = "1"; mensagem.textContent = "Salvando...";
+    try {
+      const { error } = await db.rpc("salvar_configuracao_equipamento", { p_equipamento_id: equipamentoId, p_tempo_minutos: tempo, p_valor_tempo: Math.round(valor * 100) / 100 });
+      if (error) throw error;
+      for (const cache of [window.vortexEquipamentosAtuais || [], controladoresCacheVortex, pixEquipamentosCacheVortex]) {
+        const equipamento = cache.find(e => e.id === equipamentoId);
+        if (equipamento) { equipamento.tempo_minutos = tempo; equipamento.valor_tempo = Math.round(valor * 100) / 100; }
+      }
+      mensagem.textContent = "✓ Configuração salva com sucesso!";
+    } catch (erro) { console.error(erro); mensagem.textContent = "Não foi possível salvar a configuração. Tente novamente."; }
+    finally { mensagem.dataset.salvando = "0"; }
+  }
 
   /* NOVOS MÓDULOS VORTEX */
 
   let controladoresCacheVortex = [];
   let pixModoVortex = "fixo";
+  let pixEquipamentosCacheVortex = [];
 
-  function escaparAtributoVortex(valor) {
-    return String(valor ?? "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
-  }
+
 
   function acaoPendenteSupabaseVortex(acao) {
-    alert(`${acao}: a tela já está pronta. A execução/gravação real será conectada ao Supabase na próxima etapa.`);
+    alert(`${acao}: disponível após instalar e conectar um controlador compatível.`);
   }
 
-  async function carregarControladoresVortex(focoId = null) {
+
+async function carregarControladoresVortex(focoId = null) {
     const lista = document.getElementById("listaControladoresVortex");
     const detalhe = document.getElementById("detalheControladorVortex");
     if (!lista) return;
     lista.innerHTML = '<div class="message">Carregando controladores...</div>';
     if (detalhe) detalhe.innerHTML = "";
-
-    const { data, error } = await db.from("equipamentos")
-      .select("id,cliente_id,codigo,nome,status,ultima_conexao_em,comando,tempo_minutos,valor_tempo,preco_minuto,tempo_acionamento_segundos,comando_criado_em,comando_recebido_em,acionamento_finalizado_em")
-      .order("nome", { ascending: true });
-
-    if (error) {
-      console.error(error);
-      lista.innerHTML = '<div class="message">Não foi possível carregar os controladores.</div>';
-      return;
-    }
-
-    controladoresCacheVortex = data || [];
-    if (!controladoresCacheVortex.length) {
-      lista.innerHTML = '<div class="message">Nenhum equipamento/controlador encontrado.</div>';
-      return;
-    }
-
-    lista.innerHTML = controladoresCacheVortex.map(e => {
-      const online = String(e.status || "").toLowerCase() === "online";
-      const ultima = e.ultima_conexao_em ? new Date(e.ultima_conexao_em).toLocaleString("pt-BR") : "Sem conexão registrada";
-      return `
-        <div class="equipment cliente-admin-card" onclick="abrirControladorDetalheVortex('${e.id}')">
+    controladoresCacheVortex = [];
+    try {
+      const { data, error } = await buscarTodosVortex(() => consultaClienteVortex("equipamentos",
+        "id,cliente_id,codigo,nome,status,comando,tempo_minutos,valor_tempo,preco_minuto,tempo_acionamento_segundos,comando_criado_em,comando_recebido_em,acionamento_finalizado_em"));
+      if (error) throw error;
+      controladoresCacheVortex = data || [];
+      if (!data?.length) { lista.innerHTML = '<div class="message">Nenhum equipamento/controlador encontrado.</div>'; return; }
+      lista.innerHTML = data.map(e => {
+        const online = String(e.status || "").toLowerCase() === "online";
+        return `<div class="equipment cliente-admin-card">
           <strong>${escaparHtml(e.nome || "Aspirador VORTEX")}</strong>
           <div>Código: ${escaparHtml(e.codigo || "-")}</div>
           <div class="${online ? "online" : "offline"}">${online ? "● ONLINE" : "● OFFLINE"}</div>
-          <div class="info">Última conexão: ${escaparHtml(ultima)}</div>
           <div class="info">Comando atual: ${escaparHtml(e.comando || "aguardando")}</div>
           <div class="vortex-actions-wide">
-            <button type="button" onclick="event.stopPropagation();abrirControladorDetalheVortex('${e.id}')">Abrir painel</button>
-            <button type="button" class="secondary" onclick="event.stopPropagation();sincronizarControladorVortex('${e.id}')">Sincronizar</button>
-          </div>
-        </div>`;
-    }).join("");
-
-    if (focoId) abrirControladorDetalheVortex(focoId);
+            <button type="button" onclick="abrirControladorDetalheVortex('${e.id}')">Abrir painel</button>
+            <button type="button" class="secondary" onclick="sincronizarControladorVortex('${e.id}')">Atualizar</button>
+          </div></div>`;
+      }).join("");
+      if (focoId) abrirControladorDetalheVortex(focoId);
+      return true;
+    } catch (erro) {
+      console.error(erro);
+      lista.innerHTML = '<div class="message">Não foi possível carregar os controladores. Tente novamente.</div>';
+      return false;
+    }
   }
 
   function abrirControladorDoEquipamentoVortex(equipamentoId) {
-    abrirPagina("Controladores");
-    setTimeout(() => carregarControladoresVortex(equipamentoId), 80);
+    abrirPagina("Controladores", equipamentoId);
   }
 
   function abrirControladorDetalheVortex(equipamentoId) {
@@ -4785,7 +4537,7 @@ async function confirmarAcionamentoVortex() {
     const e = controladoresCacheVortex.find(x => x.id === equipamentoId);
     if (!e) return;
     const online = String(e.status || "").toLowerCase() === "online";
-    const ultima = e.ultima_conexao_em ? new Date(e.ultima_conexao_em).toLocaleString("pt-BR") : "--";
+    const ultima = e.ultima_conexao_em ? formatarDataVortex(e.ultima_conexao_em) : "--";
 
     detalhe.innerHTML = `
       <h3 class="vortex-section-title">Painel do controlador — ${escaparHtml(e.nome || "Aspirador VORTEX")}</h3>
@@ -4793,23 +4545,23 @@ async function confirmarAcionamentoVortex() {
         <div class="vortex-module-box"><div class="info">Status</div><strong class="${online ? "status-online" : "status-offline"}">${online ? "ONLINE" : "OFFLINE"}</strong></div>
         <div class="vortex-module-box"><div class="info">Código / serial</div><strong>${escaparHtml(e.codigo || "-")}</strong></div>
         <div class="vortex-module-box"><div class="info">Última conexão</div><strong>${escaparHtml(ultima)}</strong></div>
-        <div class="vortex-module-box"><div class="info">Wi-Fi / SSID</div><strong>--</strong><div class="vortex-badge pending">Aguardando ESP32</div></div>
-        <div class="vortex-module-box"><div class="info">Sinal Wi-Fi</div><strong>-- dBm</strong><div class="vortex-badge pending">Aguardando ESP32</div></div>
-        <div class="vortex-module-box"><div class="info">IP local</div><strong>--</strong></div>
-        <div class="vortex-module-box"><div class="info">MAC Address</div><strong>--</strong></div>
+        <div class="vortex-module-box"><div class="info">Wi-Fi / SSID</div><strong>--</strong><div class="vortex-badge pending">Aguardando controlador</div></div>
+        <div class="vortex-module-box"><div class="info">Sinal Wi-Fi</div><strong>-- dBm</strong><div class="vortex-badge pending">Aguardando controlador</div></div>
+        <div class="vortex-module-box"><div class="info">Comando recebido</div><strong>${escaparHtml(formatarDataVortex(e.comando_recebido_em))}</strong></div>
+        <div class="vortex-module-box"><div class="info">Último acionamento finalizado</div><strong>${escaparHtml(formatarDataVortex(e.acionamento_finalizado_em))}</strong></div>
         <div class="vortex-module-box"><div class="info">Firmware</div><strong>--</strong></div>
-        <div class="vortex-module-box"><div class="info">Tempo ligado</div><strong>--</strong></div>
+        <div class="vortex-module-box"><div class="info">Último comando enviado</div><strong>${escaparHtml(formatarDataVortex(e.comando_criado_em))}</strong></div>
       </div>
       <div class="vortex-module-box">
         <div class="info">Comando atual</div><strong>${escaparHtml(e.comando || "aguardando")}</strong>
         <div class="info" style="margin-top:8px;">Tempo: ${Number(e.tempo_minutos || 0)} min • Valor: ${moedaBR(e.valor_tempo || 0)}</div>
         <div class="vortex-actions-wide">
-          <button type="button" onclick="acionarEquipamento('${e.id}','${escaparAtributoVortex(e.nome || "Aspirador VORTEX")}')">Acionar remotamente</button>
+          <button type="button" onclick="acionarEquipamento('${e.id}')">Acionar remotamente</button>
           <button type="button" class="secondary" onclick="sincronizarControladorVortex('${e.id}')">Sincronizar</button>
           <button type="button" class="secondary" onclick="carregarHistoricoControladorVortex('${e.id}')">Histórico</button>
-          <button type="button" class="secondary" onclick="acaoPendenteSupabaseVortex('Configuração de Wi-Fi')">Configurar Wi-Fi</button>
-          <button type="button" class="secondary" onclick="acaoPendenteSupabaseVortex('Reinício remoto do controlador')">Reiniciar</button>
-          <button type="button" class="secondary" onclick="acaoPendenteSupabaseVortex('Atualização de firmware')">Firmware</button>
+          <button type="button" class="secondary" disabled title="Disponível após conectar o controlador">Configurar Wi-Fi</button>
+          <button type="button" class="secondary" disabled title="Disponível após conectar o controlador">Reiniciar</button>
+          <button type="button" class="secondary" disabled title="Disponível após conectar o controlador">Firmware</button>
         </div>
         <div id="historicoControladorVortex"></div>
       </div>`;
@@ -4817,9 +4569,9 @@ async function confirmarAcionamentoVortex() {
   }
 
   async function sincronizarControladorVortex(equipamentoId) {
-    await carregarControladoresVortex(equipamentoId);
+    const sucesso = await carregarControladoresVortex(equipamentoId);
     const h = document.getElementById("historicoControladorVortex");
-    if (h) h.innerHTML = '<div class="message" style="color:#22c55e;">✓ Dados recarregados do Supabase.</div>';
+    if (h && sucesso) h.innerHTML = '<div class="message" style="color:#22c55e;">✓ Dados recarregados do Supabase.</div>';
   }
 
   async function carregarHistoricoControladorVortex(equipamentoId) {
@@ -4832,26 +4584,34 @@ async function confirmarAcionamentoVortex() {
     ]);
     const pags = pagResp.error ? [] : (pagResp.data || []);
     const sessoes = sessResp.error ? [] : (sessResp.data || []);
-    alvo.innerHTML = `<div class="vortex-divider"></div><h4>Histórico recente</h4><div class="vortex-module-grid two"><div class="vortex-module-box"><div class="info">Pagamentos</div><strong>${pags.length}</strong></div><div class="vortex-module-box"><div class="info">Sessões</div><strong>${sessoes.length}</strong></div></div>${sessoes.slice(0,5).map(x => `<div class="status-row"><div><strong>Sessão ${Number(x.minutos_comprados || 0)} min</strong><span>${escaparHtml(x.status || "-")}</span></div><div class="status-money"><small>${x.criado_em ? new Date(x.criado_em).toLocaleString("pt-BR") : "-"}</small></div></div>`).join("") || '<div class="message">Sem sessões recentes.</div>'}`;
+    alvo.innerHTML = `<div class="vortex-divider"></div><h4>Histórico recente</h4><div class="vortex-module-grid two"><div class="vortex-module-box"><div class="info">Pagamentos</div><strong>${pags.length}</strong></div><div class="vortex-module-box"><div class="info">Sessões</div><strong>${sessoes.length}</strong></div></div>${sessoes.slice(0,5).map(x => `<div class="status-row"><div><strong>Sessão ${Number(x.minutos_comprados || 0)} min</strong><span>${escaparHtml(x.status || "-")}</span></div><div class="status-money"><small>${x.criado_em ? formatarDataVortex(x.criado_em) : "-"}</small></div></div>`).join("") || '<div class="message">Sem sessões recentes.</div>'}`;
   }
 
-  async function carregarPixConfigVortex() {
+
+async function carregarPixConfigVortex() {
     const select = document.getElementById("pixEquipamentoVortex");
     if (!select) return;
-    const { data, error } = await db.from("equipamentos").select("id,codigo,nome,preco_minuto,tempo_minutos,valor_tempo").order("nome", { ascending: true });
-    if (error) {
-      console.error(error);
-      select.innerHTML = '<option value="">Erro ao carregar equipamentos</option>';
-      return;
+    const anterior = select.value;
+    try {
+      const { data, error } = await buscarTodosVortex(() => consultaClienteVortex("equipamentos",
+        "id,cliente_id,codigo,nome,preco_minuto,tempo_minutos,valor_tempo"));
+      if (error) throw error;
+      pixEquipamentosCacheVortex = data || [];
+      select.innerHTML = data?.length ? data.map(e => `<option value="${e.id}">${escaparHtml(e.nome || "Aspirador VORTEX")} — ${escaparHtml(e.codigo || "-")}</option>`).join("") : '<option value="">Nenhum equipamento disponível</option>';
+      if (data?.some(e => e.id === anterior)) select.value = anterior;
+      atualizarCamposPixVortex();
+    } catch (erro) {
+      console.error(erro);
+      pixEquipamentosCacheVortex = [];
+      select.innerHTML = '<option value="">Não foi possível carregar equipamentos</option>';
     }
-    const equipamentos = data || [];
-    select.innerHTML = equipamentos.length ? equipamentos.map(e => `<option value="${e.id}">${escaparHtml(e.nome || "Aspirador VORTEX")} — ${escaparHtml(e.codigo || "-")}</option>`).join("") : '<option value="">Nenhum equipamento disponível</option>';
-    if (equipamentos[0]) {
-      const e = equipamentos[0];
-      if (Number(e.valor_tempo || 0) > 0) document.getElementById("pixValorFixoVortex").value = Number(e.valor_tempo).toFixed(2);
-      if (Number(e.tempo_minutos || 0) > 0) document.getElementById("pixMinutosFixosVortex").value = Number(e.tempo_minutos);
-      if (Number(e.preco_minuto || 0) > 0) document.getElementById("pixPrecoMinutoVortex").value = Number(e.preco_minuto).toFixed(2);
-    }
+  }
+
+  function atualizarCamposPixVortex() {
+    const equipamento = pixEquipamentosCacheVortex.find(e => e.id === document.getElementById("pixEquipamentoVortex")?.value);
+    document.getElementById("pixValorFixoVortex").value = Number(equipamento?.valor_tempo || 0).toFixed(2);
+    document.getElementById("pixMinutosFixosVortex").value = Number(equipamento?.tempo_minutos || 1);
+    document.getElementById("pixPrecoMinutoVortex").value = Number(equipamento?.preco_minuto || 0).toFixed(2);
   }
 
   function selecionarModoPixVortex(modo) {
@@ -4862,20 +4622,22 @@ async function confirmarAcionamentoVortex() {
     document.getElementById("btnPixMinutosVortex")?.classList.toggle("ativo", pixModoVortex === "minutos");
   }
 
-  function obterDadosPixVortex() {
-    const eq = document.getElementById("pixEquipamentoVortex");
-    if (!eq?.value) throw new Error("Selecione um equipamento.");
-    let valor = 0, minutos = 0;
+
+function obterDadosPixVortex() {
+    const id = document.getElementById("pixEquipamentoVortex")?.value;
+    if (!pixEquipamentosCacheVortex.some(e => e.id === id)) throw new Error("Selecione um equipamento disponível para sua conta.");
+    let valor, minutos;
     if (pixModoVortex === "fixo") {
-      valor = Number(document.getElementById("pixValorFixoVortex")?.value || 0);
-      minutos = Number(document.getElementById("pixMinutosFixosVortex")?.value || 0);
+      valor = Number(document.getElementById("pixValorFixoVortex")?.value);
+      minutos = Number(document.getElementById("pixMinutosFixosVortex")?.value);
     } else {
-      const preco = Number(document.getElementById("pixPrecoMinutoVortex")?.value || 0);
-      minutos = Number(document.getElementById("pixQtdMinutosVortex")?.value || 0);
+      const preco = Number(document.getElementById("pixPrecoMinutoVortex")?.value);
+      minutos = Number(document.getElementById("pixQtdMinutosVortex")?.value);
       valor = preco * minutos;
     }
-    if (!(valor > 0) || !(minutos >= 1)) throw new Error("Informe valor e minutos válidos.");
-    return { equipamento_id: eq.value, valor: Number(valor.toFixed(2)), minutos: Math.round(minutos), modo: pixModoVortex };
+    if (!Number.isFinite(valor) || valor < 0.01 || !Number.isSafeInteger(Math.round(valor * 100)) || !Number.isSafeInteger(minutos) || minutos < 1)
+      throw new Error("Informe um valor maior que zero e minutos inteiros a partir de 1.");
+    return { equipamento_id: id, valor: Math.round(valor * 100) / 100, minutos, modo: pixModoVortex };
   }
 
   function extrairPixRespostaVortex(data) {
@@ -4895,104 +4657,119 @@ async function confirmarAcionamentoVortex() {
   let pixMonitorIntervalVortex = null;
   let pixReferenciaAtualVortex = "";
 
-  async function gerarPixRealVortex() {
+
+async function gerarPixRealVortex() {
     const resumo = document.getElementById("resumoPixVortex");
-    if (!resumo) return;
+    const botao = document.getElementById("btnGerarPixVortex");
+    if (!resumo || botao.disabled) return;
     let payload;
+    try { payload = obterDadosPixVortex(); }
+    catch (erro) { resumo.textContent = erro.message; return; }
+    pararMonitorPixVortex();
+    pixReferenciaAtualVortex = "";
+    botao.disabled = true;
+    botao.textContent = "Gerando...";
+    resumo.textContent = "Gerando cobrança PIX...";
     try {
-      payload = obterDadosPixVortex();
-    } catch (e) {
-      resumo.innerHTML = `<span class="vortex-status-error">${escaparHtml(e.message)}</span>`;
-      return;
-    }
-
-    resumo.innerHTML = '<div class="message">Gerando cobrança PIX real...</div>';
-
-    const { data, error } = await db.functions.invoke("criar-pix-vortex", { body: payload });
-    if (error) {
-      console.error(error);
-      resumo.innerHTML = `<div class="vortex-pix-real"><div class="vortex-status-error">Não foi possível gerar o PIX.</div><div class="info" style="margin-top:8px;">${escaparHtml(error.message || "Verifique a Edge Function criar-pix-vortex no Supabase.")}</div></div>`;
-      return;
-    }
-
-    const pix = extrairPixRespostaVortex(data);
-    pixReferenciaAtualVortex = pix.referencia;
-    resumo.innerHTML = `
-      <div class="vortex-pix-real">
-        <div class="info">${pixModoVortex === "fixo" ? "Valor fixo" : "Valor por minutos"}</div>
-        <div class="value">${moedaBR(payload.valor)}</div>
-        <div class="info">${payload.minutos} minuto(s)</div>
-        <div id="pixStatusRealVortex" class="vortex-status-wait" style="margin-top:12px;">Aguardando pagamento</div>
-        <div id="qrCanvasVortex" class="qr-canvas"></div>
-        <div class="info">TXID / referência</div>
-        <strong>${escaparHtml(pix.referencia || "Gerado pelo PagBank")}</strong>
-        ${pix.copiaCola ? `<textarea id="pixCopiaColaVortex" class="vortex-pix-code" readonly>${escaparHtml(pix.copiaCola)}</textarea><button type="button" onclick="copiarPixVortex()" style="width:100%;padding:12px;margin-top:8px;">Copiar PIX Copia e Cola</button>` : '<div class="info" style="margin-top:12px;">A função retornou a cobrança, mas não retornou o texto PIX. Ajustaremos a resposta da Edge Function se necessário.</div>'}
+      const { data, error } = await db.functions.invoke("criar-pix-vortex", { body: payload });
+      if (error) throw error;
+      if (data?.error || data?.data?.error) throw new Error(String(data.error || data.data.error));
+      const pix = extrairPixRespostaVortex(data);
+      if (!pix.copiaCola && !pix.imagem) throw new Error("A cobrança não retornou o QR Code. Confira o serviço PIX antes de tentar novamente.");
+      pixReferenciaAtualVortex = pix.referencia;
+      resumo.innerHTML = `<div class="vortex-pix-real">
+        <div class="info">${payload.modo === "fixo" ? "Valor fixo" : "Valor por minutos"}</div>
+        <div class="value">${moedaBR(payload.valor)}</div><div class="info">${payload.minutos} minuto(s)</div>
+        <div id="pixStatusRealVortex" class="vortex-status-wait" style="margin-top:12px;">Aguardando confirmação de pagamento</div>
+        <div id="qrCanvasVortex" class="qr-canvas"></div><div class="info">TXID / referência</div>
+        <strong>${escaparHtml(pix.referencia || "Não informado")}</strong>
+        ${pix.copiaCola ? `<textarea id="pixCopiaColaVortex" class="vortex-pix-code" readonly>${escaparHtml(pix.copiaCola)}</textarea><button type="button" onclick="copiarPixVortex()" style="width:100%;padding:12px;margin-top:8px;">Copiar PIX Copia e Cola</button><div id="pixCopiaMensagemVortex" class="info" role="status"></div>` : ""}
+        <div class="info" style="margin-top:12px;">O pagamento é confirmado automaticamente. O acionamento depende da conexão do controlador.</div>
       </div>`;
-
-    const qrAlvo = document.getElementById("qrCanvasVortex");
-    if (qrAlvo) {
-      if (pix.imagem && String(pix.imagem).startsWith("data:image")) {
-        qrAlvo.innerHTML = `<img alt="QR Code PIX" src="${pix.imagem}">`;
-      } else if (pix.imagem && /^https?:\/\//i.test(String(pix.imagem))) {
-        qrAlvo.innerHTML = `<img alt="QR Code PIX" src="${escaparHtml(pix.imagem)}">`;
+      const qr = document.getElementById("qrCanvasVortex");
+      const imagem = String(pix.imagem || "");
+      if (/^data:image\/(png|jpeg|webp);base64,[a-zA-Z0-9+/=\s]+$/.test(imagem) || /^https:\/\//i.test(imagem)) {
+        const img = document.createElement("img");
+        img.alt = "QR Code PIX"; img.src = imagem; qr.appendChild(img);
+      } else if (/^[a-zA-Z0-9+/=\s]{100,}$/.test(imagem)) {
+        const img = document.createElement("img"); img.alt = "QR Code PIX"; img.src = "data:image/png;base64," + imagem.replace(/\s/g, ""); qr.appendChild(img);
       } else if (pix.copiaCola && window.QRCode) {
-        qrAlvo.innerHTML = "";
-        new QRCode(qrAlvo, { text: pix.copiaCola, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
-      } else {
-        qrAlvo.style.display = "none";
-      }
-    }
-
-    if (pix.referencia) monitorarPagamentoPixVortex(pix.referencia);
+        new QRCode(qr, { text: pix.copiaCola, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
+      } else { qr.textContent = "Use o PIX Copia e Cola para pagar."; }
+      if (pix.referencia) monitorarPagamentoPixVortex(pix.referencia);
+      else document.getElementById("pixStatusRealVortex").textContent = "Cobrança criada sem referência para acompanhamento. Consulte o histórico para confirmar.";
+    } catch (erro) {
+      console.error(erro);
+      resumo.textContent = "Não foi possível gerar o PIX. " + (erro.message || "Tente novamente.");
+    } finally { botao.disabled = false; botao.textContent = "Gerar QR Code PIX"; }
   }
 
-  async function copiarPixVortex() {
+
+async function copiarPixVortex() {
     const campo = document.getElementById("pixCopiaColaVortex");
+    const mensagem = document.getElementById("pixCopiaMensagemVortex");
     if (!campo?.value) return;
-    try {
-      await navigator.clipboard.writeText(campo.value);
-      const status = document.getElementById("pixStatusRealVortex");
-      if (status) status.textContent = "PIX copiado. Aguardando pagamento";
-    } catch (e) {
+    try { await navigator.clipboard.writeText(campo.value); if (mensagem) mensagem.textContent = "PIX copiado."; }
+    catch (erro) {
       campo.select();
-      document.execCommand("copy");
+      const copiado = document.execCommand("copy");
+      if (mensagem) mensagem.textContent = copiado ? "PIX copiado." : "Selecione o código e copie manualmente.";
     }
+  }
+
+
+let pixMonitorGeracaoVortex = 0;
+  function pararMonitorPixVortex() {
+    pixMonitorGeracaoVortex++;
+    if (pixMonitorIntervalVortex) clearTimeout(pixMonitorIntervalVortex);
+    pixMonitorIntervalVortex = null;
   }
 
   function monitorarPagamentoPixVortex(referencia) {
-    if (pixMonitorIntervalVortex) clearInterval(pixMonitorIntervalVortex);
+    pararMonitorPixVortex();
+    const geracao = pixMonitorGeracaoVortex;
     let tentativas = 0;
     const consultar = async () => {
+      if (geracao !== pixMonitorGeracaoVortex || referencia !== pixReferenciaAtualVortex) return;
       tentativas++;
-      const { data, error } = await db.from("pagamentos").select("status,pago_em,valor_bruto,minutos").eq("referencia_pagbank", referencia).maybeSingle();
-      if (!error && data) {
-        const status = String(data.status || "").toUpperCase();
-        const el = document.getElementById("pixStatusRealVortex");
+      const el = document.getElementById("pixStatusRealVortex");
+      try {
+        const { data, error } = await consultaClienteVortex("pagamentos", "status,pago_em,valor_bruto,minutos")
+          .eq("referencia_pagbank", referencia).maybeSingle();
+        if (geracao !== pixMonitorGeracaoVortex || referencia !== pixReferenciaAtualVortex) return;
+        if (error) throw error;
+        const status = String(data?.status || "").toUpperCase();
         if (status === "PAID") {
-          if (el) { el.className = "vortex-status-paid"; el.textContent = "✓ PIX PAGO — equipamento autorizado"; }
-          clearInterval(pixMonitorIntervalVortex); pixMonitorIntervalVortex = null;
-          await abrirPainel();
-          abrirPagina("Pix");
+          if (el) { el.className = "vortex-status-paid"; el.textContent = "✓ PIX confirmado. Aguarde a resposta do controlador."; }
+          pararMonitorPixVortex();
+          // Keep the currently open page and QR. Payment confirmation never sends a motor command from the browser.
+          try { await abrirPainel(); } catch (erro) { console.error(erro); }
           return;
         }
-        if (["CANCELED","DECLINED","EXPIRED"].includes(status)) {
-          if (el) { el.className = "vortex-status-error"; el.textContent = `PIX ${status}`; }
-          clearInterval(pixMonitorIntervalVortex); pixMonitorIntervalVortex = null;
-          return;
+        const terminais = { CANCELED: "cancelado", CANCELLED: "cancelado", DECLINED: "recusado", EXPIRED: "expirado" };
+        if (terminais[status]) {
+          if (el) { el.className = "vortex-status-error"; el.textContent = "PIX " + terminais[status] + "."; }
+          pararMonitorPixVortex(); return;
         }
+        if (el) el.textContent = "Aguardando confirmação de pagamento";
+      } catch (erro) {
+        if (geracao !== pixMonitorGeracaoVortex) return;
+        console.error(erro);
+        if (el) el.textContent = "Não foi possível consultar o pagamento. Tentando novamente...";
       }
-      if (tentativas >= 80 && pixMonitorIntervalVortex) {
-        clearInterval(pixMonitorIntervalVortex); pixMonitorIntervalVortex = null;
-        const el = document.getElementById("pixStatusRealVortex");
-        if (el) el.textContent = "Cobrança criada. O histórico atualizará quando o webhook confirmar o pagamento.";
+      if (geracao !== pixMonitorGeracaoVortex) return;
+      if (tentativas >= 80) {
+        pararMonitorPixVortex();
+        if (el) el.textContent = "A consulta automática terminou. Consulte o histórico para confirmar o pagamento.";
+        return;
       }
+      pixMonitorIntervalVortex = setTimeout(consultar, 3000);
     };
     consultar();
-    pixMonitorIntervalVortex = setInterval(consultar, 3000);
   }
 
-  function inicioSemanaVortex(data = new Date()) {
-    const d = new Date(data); d.setHours(0,0,0,0);
+  function inicioSemanaVortex(data = null) {
+    const d = data ? new Date(data) : dataCivilBrasilVortex(); d.setHours(0,0,0,0);
     const dia = d.getDay();
     const diff = dia === 0 ? -6 : 1 - dia;
     d.setDate(d.getDate() + diff);
@@ -5001,7 +4778,7 @@ async function confirmarAcionamentoVortex() {
 
   function mesmoDiaSemanaAtualVortex(valorData, diaSemana) {
     if (!valorData) return false;
-    const d = new Date(valorData); if (Number.isNaN(d.getTime())) return false;
+    const d = dataCivilBrasilVortex(valorData); if (Number.isNaN(d.getTime())) return false;
     const ini = inicioSemanaVortex(); const fim = new Date(ini); fim.setDate(fim.getDate()+7);
     return d >= ini && d < fim && d.getDay() === Number(diaSemana);
   }
@@ -5037,10 +4814,10 @@ async function confirmarAcionamentoVortex() {
     if (!alvo) return;
 
     const pagamentos = (window.vortexPagamentosAtuais || []).filter(
-      p => String(p.status || "PAID").toUpperCase() === "PAID"
+      p => String(p.status || "").toUpperCase() === "PAID"
     );
 
-    const hoje = new Date();
+    const hoje = dataCivilBrasilVortex();
     hoje.setHours(0,0,0,0);
     const inicio = inicioSemanaVortex(hoje);
     const nomes = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
@@ -5052,7 +4829,7 @@ async function confirmarAcionamentoVortex() {
     pagamentos.forEach(p => {
       const d = new Date(p.pago_em || p.criado_em || "");
       if (Number.isNaN(d.getTime())) return;
-      const chave = chaveDataLocalVortex(d);
+      const chave = chaveDataBrasilVortex(d);
       totaisPorData[chave] = (totaisPorData[chave] || 0) + Number(p.valor_bruto || 0);
       vendasPorData[chave] = (vendasPorData[chave] || 0) + 1;
       minutosPorData[chave] = (minutosPorData[chave] || 0) + Number(p.minutos || 0);
@@ -5116,6 +4893,17 @@ async function confirmarAcionamentoVortex() {
     }).join("");
 
     alvo.innerHTML = `${resumo}<div class="vortex-week-table">${celulas}</div>`;
+  }
+
+
+  function reaplicarFiltrosVortex() {
+    renderizarFaturamentoPorDiaVortex(filtroDiasAtivosVortex.faturamento ?? null);
+    for (const contexto of ["pix", "sessoes"]) {
+      const dia = filtroDiasAtivosVortex[contexto];
+      document.querySelectorAll(`[data-vortex-context="${contexto}"]`).forEach(el => {
+        el.style.display = dia == null || mesmoDiaSemanaAtualVortex(el.dataset.vortexDate, dia) ? "" : "none";
+      });
+    }
   }
 
   const filtroDiasAtivosVortex = {};
@@ -5216,55 +5004,82 @@ async function confirmarAcionamentoVortex() {
     alvo.innerHTML = equips.length ? equips.map(e => `<div class="equipment"><strong>${escaparHtml(e.nome || "Aspirador VORTEX")}</strong><div>Faturamento: ${moedaBR(totais[e.id] || 0)}</div></div>`).join("") : '<div class="message">Nenhum equipamento encontrado.</div>';
   }
 
-  async function carregarFinanceiroModuloVortex() {
+
+async function carregarFinanceiroModuloVortex() {
     const alvo = document.getElementById("financeiroModuloVortex");
     if (!alvo) return;
-    alvo.innerHTML = '<div class="message">Carregando financeiro...</div>';
-
-    const pagamentosResp = await db.from("pagamentos").select("valor_bruto,comissao_vortex,valor_cliente,status,pago_em,criado_em").eq("status","PAID").order("criado_em",{ascending:false}).limit(500);
-    const pagamentos = pagamentosResp.error ? [] : (pagamentosResp.data || []);
-    const bruto = pagamentos.reduce((t,p)=>t+Number(p.valor_bruto||0),0);
-    const comissao = pagamentos.reduce((t,p)=>t+Number(p.comissao_vortex||0),0);
-    const liquido = pagamentos.reduce((t,p)=>t+Number(p.valor_cliente||0),0);
-
-    let saldo = 0, saldoErro = null;
-    if (usuarioEhAdmin) {
-      const r = await db.rpc("saldo_central_vortex"); saldo = Number(r.data || 0); saldoErro = r.error;
-    } else if (clienteLogado?.id) {
-      const r = await db.rpc("saldo_disponivel_cliente", {p_cliente_id: clienteLogado.id}); saldo = Number(r.data || 0); saldoErro = r.error;
-    }
-
-    const repResp = await db.from("repasses_clientes").select("valor,status,criado_em").order("criado_em",{ascending:false}).limit(200);
-    const repassado = repResp.error ? 0 : (repResp.data || []).reduce((t,r)=>t+(String(r.status||"").toLowerCase()==="concluido"?Number(r.valor||0):0),0);
-
-    alvo.innerHTML = `<div class="vortex-module-grid"><div class="vortex-module-box"><div class="info">${usuarioEhAdmin ? "Saldo atual da Central" : "Saldo disponível para repasse"}</div><strong>${saldoErro ? "--" : moedaBR(saldo)}</strong></div><div class="vortex-module-box"><div class="info">PIX confirmados</div><strong>${moedaBR(bruto)}</strong></div><div class="vortex-module-box"><div class="info">Comissão VORTEX registrada</div><strong>${moedaBR(comissao)}</strong><div class="info">2,99% nas novas vendas</div></div><div class="vortex-module-box"><div class="info">Líquido dos clientes</div><strong>${moedaBR(liquido)}</strong></div><div class="vortex-module-box"><div class="info">Repasses concluídos</div><strong>${moedaBR(repassado)}</strong></div><div class="vortex-module-box"><div class="info">Mensalidade</div><strong>${moedaBR(50)}</strong><div class="info">Primeiro completa a mensalidade; excedente vira saldo.</div></div></div><div class="vortex-module-box"><strong>Extrato financeiro</strong><div class="info" style="margin-top:8px;">Na etapa do Supabase vamos consolidar vendas, comissão, mensalidade, repasses e retiradas em um extrato único.</div></div>`;
+    alvo.textContent = "Carregando financeiro...";
+    try {
+      const [pagResp, repResp, mensResp, saldoResp] = await Promise.all([
+        buscarTodosVortex(() => consultaClienteVortex("pagamentos", "id,valor_bruto,comissao_vortex,valor_cliente,status,pago_em,criado_em").eq("status", "PAID")),
+        buscarTodosVortex(() => consultaClienteVortex("repasses_clientes", "id,valor,status,descricao,criado_em")),
+        buscarTodosVortex(() => consultaClienteVortex("mensalidades", "id,valor,status,vencimento,pago_em")),
+        usuarioEhAdmin ? db.rpc("saldo_central_vortex") : db.rpc("saldo_disponivel_cliente", { p_cliente_id: clienteLogado.id })
+      ]);
+      if (pagResp.error) throw pagResp.error;
+      const pagamentos = pagResp.data || [];
+      const repasses = repResp.data || [], mensalidades = mensResp.data || [];
+      const bruto = pagamentos.reduce((t,p) => t + Number(p.valor_bruto || 0), 0);
+      const comissao = pagamentos.reduce((t,p) => t + Number(p.comissao_vortex || 0), 0);
+      const liquido = pagamentos.reduce((t,p) => t + Number(p.valor_cliente || 0), 0);
+      const repassado = repasses.filter(r => String(r.status).toLowerCase() === "concluido").reduce((t,r) => t + Number(r.valor || 0), 0);
+      const eventos = [
+        ...pagamentos.map(p => ({data: p.pago_em || p.criado_em, tipo: "PIX confirmado", status: "Pago", valor: p.valor_bruto})),
+        ...repasses.map(r => ({data: r.criado_em, tipo: "Repasse registrado", status: r.status, valor: r.valor})),
+        ...mensalidades.map(m => ({data: m.pago_em || m.vencimento + "T12:00:00-03:00", tipo: "Mensalidade", status: m.status, valor: m.valor}))
+      ].sort((a,b) => new Date(b.data) - new Date(a.data)).slice(0,50);
+      const avisos = [repResp.error && "Não foi possível carregar os repasses.", mensResp.error && "Não foi possível carregar as mensalidades.", saldoResp.error && "Saldo indisponível no momento."].filter(Boolean);
+      alvo.innerHTML = `<div class="vortex-module-grid">
+        <div class="vortex-module-box"><div class="info">${usuarioEhAdmin ? "Saldo atual da Central" : "Saldo disponível para repasse"}</div><strong>${saldoResp.error ? "—" : moedaBR(saldoResp.data)}</strong></div>
+        <div class="vortex-module-box"><div class="info">PIX confirmados</div><strong>${moedaBR(bruto)}</strong></div>
+        <div class="vortex-module-box"><div class="info">Comissão VORTEX registrada</div><strong>${moedaBR(comissao)}</strong><div class="info">2,99% nas novas vendas</div></div>
+        <div class="vortex-module-box"><div class="info">Líquido dos clientes</div><strong>${moedaBR(liquido)}</strong></div>
+        <div class="vortex-module-box"><div class="info">Repasses concluídos</div><strong>${repResp.error ? "—" : moedaBR(repassado)}</strong></div>
+        <div class="vortex-module-box"><div class="info">Mensalidade</div><strong>${moedaBR(50)}</strong><div class="info">Cobrança conforme o saldo disponível.</div></div>
+      </div>${avisos.map(a => `<div class="message vortex-status-error">${escaparHtml(a)}</div>`).join("")}
+      <div class="vortex-module-box"><strong>Últimos 50 registros financeiros</strong><div class="info">Valores de cada operação. O saldo disponível considera os descontos e repasses.</div>
+        ${eventos.map(e => `<div class="status-row"><div><strong>${escaparHtml(e.tipo)}</strong><span>${escaparHtml(e.status || "—")} • ${escaparHtml(formatarDataVortex(e.data))}</span></div><div class="status-money"><strong>${moedaBR(e.valor)}</strong></div></div>`).join("") || '<div class="message">Nenhuma movimentação encontrada.</div>'}
+      </div>`;
+    } catch (erro) { console.error(erro); alvo.textContent = "Não foi possível carregar o financeiro completo. Tente novamente."; }
   }
 
   function prepararDatasRelatorioVortex() {
     const ini = document.getElementById("relatorioDataInicioVortex");
     const fim = document.getElementById("relatorioDataFimVortex");
     if (!ini || !fim) return;
-    if (!fim.value) fim.value = new Date().toISOString().slice(0,10);
-    if (!ini.value) { const d = new Date(); d.setDate(1); ini.value = d.toISOString().slice(0,10); }
+    if (!fim.value) fim.value = chaveDataBrasilVortex();
+    if (!ini.value) ini.value = chaveDataBrasilVortex().slice(0,8) + "01";
   }
 
   let relatorioAtualVortex = null;
 
-  async function gerarRelatorioVortex() {
+
+async function gerarRelatorioVortex() {
     const alvo = document.getElementById("relatorioVortexResultado");
     const inicio = document.getElementById("relatorioDataInicioVortex")?.value;
     const fim = document.getElementById("relatorioDataFimVortex")?.value;
-    if (!alvo || !inicio || !fim) return;
-    alvo.innerHTML = '<div class="message">Gerando relatório...</div>';
-    const [pagResp,sessResp] = await Promise.all([
-      db.from("pagamentos").select("valor_bruto,comissao_vortex,status,pago_em,criado_em,equipamento_id").eq("status","PAID").limit(1000),
-      db.from("sessoes").select("id,status,minutos_comprados,iniciado_em,criado_em,equipamento_id").limit(1000)
-    ]);
-    const a = new Date(inicio+"T00:00:00").getTime(), b = new Date(fim+"T23:59:59").getTime();
-    const pags = (pagResp.error?[]:(pagResp.data||[])).filter(p=>{const t=new Date(p.pago_em||p.criado_em).getTime();return t>=a&&t<=b;});
-    const sessoes = (sessResp.error?[]:(sessResp.data||[])).filter(x=>{const t=new Date(x.iniciado_em||x.criado_em).getTime();return t>=a&&t<=b;});
-    relatorioAtualVortex = { pags, sessoes, inicio, fim, dia: null };
-    renderizarRelatorioVortex();
+    if (!alvo) return;
+    relatorioAtualVortex = null;
+    if (!inicio || !fim || inicio > fim) { alvo.textContent = "Informe um período válido: a data inicial deve ser anterior ou igual à final."; return; }
+    alvo.textContent = "Gerando relatório...";
+    try {
+      const equips = await buscarTodosVortex(() => consultaClienteVortex("equipamentos", "id,cliente_id"));
+      if (equips.error) throw equips.error;
+      const ids = (equips.data || []).map(e => e.id);
+      const [pagResp, sessResp] = await Promise.all([
+        buscarTodosVortex(() => consultaClienteVortex("pagamentos", "id,valor_bruto,comissao_vortex,status,pago_em,criado_em,equipamento_id").eq("status", "PAID")
+          .or(`and(pago_em.gte.${inicio}T00:00:00-03:00,pago_em.lte.${fim}T23:59:59.999-03:00),and(pago_em.is.null,criado_em.gte.${inicio}T00:00:00-03:00,criado_em.lte.${fim}T23:59:59.999-03:00)`)),
+        ids.length ? buscarTodosVortex(() => db.from("sessoes").select("id,status,minutos_comprados,iniciado_em,finalizado_em,criado_em,equipamento_id")
+          .in("equipamento_id", ids)
+          .or(`and(iniciado_em.gte.${inicio}T00:00:00-03:00,iniciado_em.lte.${fim}T23:59:59.999-03:00),and(iniciado_em.is.null,criado_em.gte.${inicio}T00:00:00-03:00,criado_em.lte.${fim}T23:59:59.999-03:00)`)) : Promise.resolve({ data: [], error: null })
+      ]);
+      if (pagResp.error || sessResp.error) throw pagResp.error || sessResp.error;
+      relatorioAtualVortex = { pags: pagResp.data || [], sessoes: sessResp.data || [], inicio, fim, dia: null };
+      renderizarRelatorioVortex();
+    } catch (erro) {
+      console.error(erro);
+      alvo.textContent = "Não foi possível gerar o relatório completo. Verifique a conexão e tente novamente.";
+    }
   }
 
   function filtrarRelatorioDiaVortex(dia, botao) {
@@ -5281,12 +5096,12 @@ async function confirmarAcionamentoVortex() {
     const { inicio, fim, dia } = relatorioAtualVortex;
     let pags = relatorioAtualVortex.pags, sessoes = relatorioAtualVortex.sessoes;
     if (dia !== null) {
-      pags = pags.filter(p => new Date(p.pago_em || p.criado_em).getDay() === dia);
-      sessoes = sessoes.filter(x => new Date(x.iniciado_em || x.criado_em).getDay() === dia);
+      pags = pags.filter(p => dataCivilBrasilVortex(p.pago_em || p.criado_em).getDay() === dia);
+      sessoes = sessoes.filter(x => dataCivilBrasilVortex(x.iniciado_em || x.criado_em).getDay() === dia);
     }
     const bruto=pags.reduce((t,p)=>t+Number(p.valor_bruto||0),0), com=pags.reduce((t,p)=>t+Number(p.comissao_vortex||0),0), min=sessoes.reduce((t,x)=>t+Number(x.minutos_comprados||0),0);
     const nomes=["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
-    alvo.innerHTML=`<div class="vortex-module-grid"><div class="vortex-module-box"><div class="info">Vendas</div><strong>${pags.length}</strong></div><div class="vortex-module-box"><div class="info">Faturamento</div><strong>${moedaBR(bruto)}</strong></div><div class="vortex-module-box"><div class="info">Comissão VORTEX</div><strong>${moedaBR(com)}</strong></div><div class="vortex-module-box"><div class="info">Sessões</div><strong>${sessoes.length}</strong></div><div class="vortex-module-box"><div class="info">Minutos utilizados</div><strong>${min}</strong></div><div class="vortex-module-box"><div class="info">Filtro</div><strong>${dia===null ? `${inicio.split('-').reverse().join('/')} a ${fim.split('-').reverse().join('/')}` : nomes[dia]}</strong></div></div>
+    alvo.innerHTML=`<div class="vortex-module-grid"><div class="vortex-module-box"><div class="info">Vendas</div><strong>${pags.length}</strong></div><div class="vortex-module-box"><div class="info">Faturamento</div><strong>${moedaBR(bruto)}</strong></div><div class="vortex-module-box"><div class="info">Comissão VORTEX</div><strong>${moedaBR(com)}</strong></div><div class="vortex-module-box"><div class="info">Sessões</div><strong>${sessoes.length}</strong></div><div class="vortex-module-box"><div class="info">Minutos comprados</div><strong>${min}</strong></div><div class="vortex-module-box"><div class="info">Filtro</div><strong>${dia===null ? `${inicio.split('-').reverse().join('/')} a ${fim.split('-').reverse().join('/')}` : nomes[dia]}</strong></div></div>
       <div class="vortex-weekdays" data-week-context="relatorios">
         <button type="button" onclick="filtrarRelatorioDiaVortex(1,this)" class="${dia===1?'ativo':''}">Seg</button><button type="button" onclick="filtrarRelatorioDiaVortex(2,this)" class="${dia===2?'ativo':''}">Ter</button><button type="button" onclick="filtrarRelatorioDiaVortex(3,this)" class="${dia===3?'ativo':''}">Qua</button><button type="button" onclick="filtrarRelatorioDiaVortex(4,this)" class="${dia===4?'ativo':''}">Qui</button><button type="button" onclick="filtrarRelatorioDiaVortex(5,this)" class="${dia===5?'ativo':''}">Sex</button><button type="button" onclick="filtrarRelatorioDiaVortex(6,this)" class="${dia===6?'ativo':''}">Sáb</button><button type="button" onclick="filtrarRelatorioDiaVortex(0,this)" class="${dia===0?'ativo':''}">Dom</button>
       </div><div class="vortex-week-caption">Dias da semana — toque novamente no selecionado para remover o filtro.</div>`;
@@ -5297,7 +5112,9 @@ async function confirmarAcionamentoVortex() {
     return `vortex_${sufixo}_${data?.user?.id || "anon"}`;
   }
 
+  let recebimentoSalvandoVortex = false;
   async function salvarConfiguracoesContaVortex() {
+    if (recebimentoSalvandoVortex) return;
     const msg=document.getElementById("configMensagemVortex");
     if (msg) msg.textContent="Salvando dados de recebimento...";
     const payload={
@@ -5312,18 +5129,31 @@ async function confirmarAcionamentoVortex() {
       if (msg) msg.innerHTML='<span class="vortex-status-error">Informe a chave PIX e o titular.</span>';
       return;
     }
-    const { error } = await db.rpc("salvar_dados_financeiros_cliente", payload);
-    if (error) {
-      console.error(error);
-      if (msg) msg.innerHTML='<span class="vortex-status-error">O app está pronto, mas falta criar a função salvar_dados_financeiros_cliente no Supabase.</span>';
-      return;
-    }
-    if (msg) msg.innerHTML='<span class="vortex-status-paid">✓ Dados de recebimento salvos com segurança.</span>';
+    recebimentoSalvandoVortex = true;
+    try {
+      const { error } = await db.rpc("salvar_recebimento_vortex", payload);
+      if (error) throw error;
+      if (msg) msg.textContent = "✓ Dados de recebimento salvos.";
+    } catch (erro) {
+      console.error(erro);
+      if (msg) msg.textContent = "Não foi possível salvar os dados de recebimento. Tente novamente.";
+    } finally { recebimentoSalvandoVortex = false; }
   }
 
-  async function carregarConfiguracoesLocaisVortex() {
-    const chave=await chaveLocalVortex("config");
-    try { const d=JSON.parse(localStorage.getItem(chave)||"null"); if(!d)return; document.getElementById("configTipoPixVortex").value=d.tipoPix||"cpf_cnpj"; document.getElementById("configChavePixVortex").value=d.chavePix||""; document.getElementById("configTitularPixVortex").value=d.titular||""; document.getElementById("configModoCobrancaVortex").value=d.modo||"fixo"; } catch(e){console.error(e);}
+
+async function carregarConfiguracoesLocaisVortex() {
+    const msg = document.getElementById("configMensagemVortex");
+    msg.textContent = "Carregando dados de recebimento...";
+    const campos = {configTipoPixVortex:"tipo_chave_pix", configChavePixVortex:"chave_pix", configTitularPixVortex:"titular",
+      configBancoVortex:"banco", configDocumentoTitularVortex:"documento_titular", configModoCobrancaVortex:"modo_cobranca"};
+    for (const id of Object.keys(campos)) document.getElementById(id).value = id === "configTipoPixVortex" ? "cpf_cnpj" : id === "configModoCobrancaVortex" ? "fixo" : "";
+    try {
+      const { data, error } = await db.rpc("obter_recebimento_vortex");
+      if (error) throw error;
+      const dados = Array.isArray(data) ? data[0] : data;
+      if (dados) for (const [id, campo] of Object.entries(campos)) if (dados[campo] != null) document.getElementById(id).value = dados[campo];
+      msg.textContent = dados ? "" : "Cadastre seus dados de recebimento.";
+    } catch (erro) { console.error(erro); msg.textContent = "Não foi possível consultar seus dados de recebimento. Verifique o serviço de configurações."; }
   }
 
   async function salvarNotificacoesLocaisVortex() {
@@ -5342,9 +5172,8 @@ async function confirmarAcionamentoVortex() {
 
   async function sair() {
 
-    await db.auth
-      .signOut();
-
+    pararMonitorPixVortex();
+    await db.auth.signOut({ scope: "local" });
     location.reload();
 
   }
@@ -5352,30 +5181,22 @@ async function confirmarAcionamentoVortex() {
 
   /* VERIFICAR LOGIN */
 
+
   async function verificarSessao() {
-
-    const {
-      data: {
-        session
-      }
-    } =
-      await db.auth
-        .getSession();
-
-
-    if (
-      session
-    ) {
-
-      abrirPainel();
-
-    }
-
+    const msg = document.getElementById("loginMsg");
+    try {
+      if (!db) { msg.textContent = "Conexão indisponível. Recarregue a página."; return; }
+      const { data, error } = await db.auth.getSession();
+      if (error) throw error;
+      if (data?.session) await abrirPainel();
+    } catch (erro) { console.error(erro); if (!msg.textContent) msg.textContent = "Não foi possível recuperar a sessão. Entre novamente."; }
   }
 
-
-  verificarSessao();
-
+  document.getElementById("loginSenha").addEventListener("keydown", evento => {
+    if (evento.key === "Enter") login();
+  });
+  // Run after all script variables and the modal HTML have been initialized.
+  window.addEventListener("DOMContentLoaded", verificarSessao);
 
   // =====================================================
   // SUPORTE WHATSAPP — ABERTURA DIRETA NO CELULAR
