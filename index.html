@@ -2021,15 +2021,19 @@ class="admin-only"
                 <div class="vortex-field"><label>Valor fixo (R$)</label><input id="pixValorFixoVortex" type="number" min="0.01" step="0.01" value="4.00"></div>
                 <div class="vortex-field"><label>Tempo liberado (minutos)</label><input id="pixMinutosFixosVortex" type="number" min="1" step="1" value="2"></div>
               </div>
-              <p class="info">O proprietário define o valor e o tempo. O QR Code fica vinculado ao equipamento.</p>
+              <p class="info">Defina o valor do pacote e os minutos liberados. Salve a configuração antes de gerar o PIX.</p>
             </div>
             <div id="pixModoMinutosVortex" class="hidden">
               <div class="vortex-row">
                 <div class="vortex-field"><label>Preço por minuto (R$)</label><input id="pixPrecoMinutoVortex" type="number" min="0.01" step="0.01" value="2.00"></div>
-                <div class="vortex-field"><label>Minutos para pré-visualização</label><input id="pixQtdMinutosVortex" type="number" min="1" step="1" value="2"></div>
+                <div class="vortex-field"><label>Minutos da compra</label><input id="pixQtdMinutosVortex" type="number" min="1" step="1" value="2"></div>
               </div>
-              <p class="info">O usuário final escolhe os minutos. Cada escolha cria nova cobrança, novo TXID e novo QR Code.</p>
+              <p class="info">O proprietário define e salva o preço por minuto. A compra usa os minutos escolhidos × o preço salvo. Cada compra gera um novo QR Code.</p>
             </div>
+            <div class="vortex-actions" style="margin-top:12px;">
+              <button type="button" class="secondary" id="btnSalvarPrecosPixVortex" onclick="salvarPrecosPixVortex()">Salvar preços e tempo do equipamento</button>
+            </div>
+            <div id="mensagemPrecosPixVortex" class="message" role="status"></div>
             <div class="vortex-row" style="margin-top:12px;">
               <div><button type="button" id="btnGerarPixVortex" onclick="gerarPixRealVortex()" style="width:100%;padding:13px;">Gerar QR Code PIX</button></div>
               <div id="resumoPixVortex" class="vortex-qr-placeholder">Selecione o modo e clique em “Gerar QR Code PIX”.</div>
@@ -3491,12 +3495,17 @@ if (btnClientesAdmin) {
               }
             </div>
 
+            <div style="margin-top:15px;">
+              <label>Preço por minuto (R$)</label>
+              <input type="number" id="preco-${e.id}" value="${Number(e.preco_minuto || 0).toFixed(2)}" min="0.01" max="10000" step="0.01">
+            </div>
+
             <div
               style="margin-top:15px;"
             >
 
               <label>
-                Tempo desejado (minutos)
+                Tempo do pacote fixo (minutos)
               </label>
 
               <input
@@ -3513,7 +3522,7 @@ if (btnClientesAdmin) {
             >
 
               <label>
-                Valor do tempo (R$)
+                Valor do pacote fixo (R$)
               </label>
 
               <input
@@ -4273,12 +4282,16 @@ if (btnClientesAdmin) {
             <div class="info" style="margin-top:8px;">Comando: ${escaparHtml(e.comando || "aguardando")}</div>
 
             <div style="margin-top:15px;">
-              <label>Tempo desejado (minutos)</label>
+              <label>Preço por minuto (R$)</label>
+              <input type="number" id="admin-preco-${e.id}" value="${Number(e.preco_minuto || 0).toFixed(2)}" min="0.01" max="10000" step="0.01">
+            </div>
+            <div style="margin-top:15px;">
+              <label>Tempo do pacote fixo (minutos)</label>
               <input type="number" id="admin-tempo-${e.id}" value="${Number(e.tempo_minutos || 1)}" min="1">
             </div>
 
             <div style="margin-top:10px;">
-              <label>Valor do tempo (R$)</label>
+              <label>Valor do pacote fixo (R$)</label>
               <input type="number" id="admin-valor-${e.id}" value="${Number(e.valor_tempo || 0).toFixed(2)}" min="0" step="0.01">
             </div>
 
@@ -4457,27 +4470,76 @@ async function salvarConfiguracao(equipamentoId) {
     await salvarConfiguracaoVortex(equipamentoId, false);
   }
 
+  const configuracoesSalvandoVortex = new Set();
+
+  function validarPrecosEquipamentoVortex(preco, tempo, valor) {
+    const precoArredondado = Math.round(preco * 100) / 100;
+    const valorArredondado = Math.round(valor * 100) / 100;
+    if (!Number.isSafeInteger(tempo) || tempo < 1 || tempo > 120 ||
+        !Number.isFinite(precoArredondado) || precoArredondado < 0.01 || precoArredondado > 10000 ||
+        !Number.isFinite(valorArredondado) || valorArredondado < 0.01 || valorArredondado > 10000) {
+      throw new Error("Informe preços entre R$0,01 e R$10.000,00 e tempo inteiro de 1 a 120 minutos.");
+    }
+    return { preco_minuto: precoArredondado, tempo_minutos: tempo, valor_tempo: valorArredondado };
+  }
+
+  async function gravarPrecosEquipamentoVortex(equipamentoId, preco, tempo, valor) {
+    const config = validarPrecosEquipamentoVortex(preco, tempo, valor);
+    if (configuracoesSalvandoVortex.has(equipamentoId)) throw new Error("Aguarde o salvamento deste equipamento.");
+    configuracoesSalvandoVortex.add(equipamentoId);
+    try {
+      const { data, error } = await db.rpc("salvar_precos_equipamento_vortex", {
+        p_equipamento_id: equipamentoId, p_preco_minuto: config.preco_minuto,
+        p_tempo_minutos: config.tempo_minutos, p_valor_tempo: config.valor_tempo
+      });
+      if (error) throw error;
+      if (!data || data.id !== equipamentoId) throw new Error("O servidor não confirmou a configuração. Recarregue os equipamentos.");
+      const salvo = { id: equipamentoId, ...validarPrecosEquipamentoVortex(Number(data.preco_minuto), Number(data.tempo_minutos), Number(data.valor_tempo)) };
+      for (const cache of [window.vortexEquipamentosAtuais || [], window.vortexDashboardEquipamentos || [], controladoresCacheVortex, pixEquipamentosCacheVortex]) {
+        const equipamento = cache.find(e => e.id === equipamentoId);
+        if (equipamento) Object.assign(equipamento, salvo);
+      }
+      return salvo;
+    } finally { configuracoesSalvandoVortex.delete(equipamentoId); }
+  }
+
   async function salvarConfiguracaoVortex(equipamentoId, admin) {
     if (admin && !usuarioEhAdmin) return;
     const prefixo = admin ? "admin-" : "";
-    const tempo = Number(document.getElementById(`${prefixo}tempo-${equipamentoId}`)?.value);
-    const valor = Number(document.getElementById(`${prefixo}valor-${equipamentoId}`)?.value);
     const mensagem = document.getElementById(`${prefixo}mensagem-${equipamentoId}`);
     if (!mensagem || mensagem.dataset.salvando === "1") return;
-    if (!Number.isSafeInteger(tempo) || tempo < 1 || !Number.isFinite(valor) || valor < 0.01) {
-      mensagem.textContent = "Informe minutos inteiros e um valor maior que zero."; return;
-    }
+    const preco = Number(document.getElementById(`${prefixo}preco-${equipamentoId}`)?.value);
+    const tempo = Number(document.getElementById(`${prefixo}tempo-${equipamentoId}`)?.value);
+    const valor = Number(document.getElementById(`${prefixo}valor-${equipamentoId}`)?.value);
     mensagem.dataset.salvando = "1"; mensagem.textContent = "Salvando...";
     try {
-      const { error } = await db.rpc("salvar_configuracao_equipamento", { p_equipamento_id: equipamentoId, p_tempo_minutos: tempo, p_valor_tempo: Math.round(valor * 100) / 100 });
-      if (error) throw error;
-      for (const cache of [window.vortexEquipamentosAtuais || [], controladoresCacheVortex, pixEquipamentosCacheVortex]) {
-        const equipamento = cache.find(e => e.id === equipamentoId);
-        if (equipamento) { equipamento.tempo_minutos = tempo; equipamento.valor_tempo = Math.round(valor * 100) / 100; }
-      }
-      mensagem.textContent = "✓ Configuração salva com sucesso!";
-    } catch (erro) { console.error(erro); mensagem.textContent = "Não foi possível salvar a configuração. Tente novamente."; }
+      const salvo = await gravarPrecosEquipamentoVortex(equipamentoId, preco, tempo, valor);
+      mensagem.textContent = `✓ Configuração salva: ${moedaBR(salvo.preco_minuto)}/minuto. Pacote fixo: ${moedaBR(salvo.valor_tempo)} por ${salvo.tempo_minutos} minuto(s).`;
+      if (document.getElementById("pixEquipamentoVortex")?.value === equipamentoId) atualizarCamposPixVortex();
+    } catch (erro) { console.error(erro); mensagem.textContent = "Não foi possível salvar: " + (erro.message || "Tente novamente."); }
     finally { mensagem.dataset.salvando = "0"; }
+  }
+
+  async function salvarPrecosPixVortex() {
+    const mensagem = document.getElementById("mensagemPrecosPixVortex");
+    const botao = document.getElementById("btnSalvarPrecosPixVortex");
+    const id = document.getElementById("pixEquipamentoVortex")?.value;
+    if (!mensagem || !botao || botao.disabled) return;
+    if (!pixEquipamentosCacheVortex.some(e => e.id === id)) { mensagem.textContent = "Selecione um equipamento disponível para sua conta."; return; }
+    const preco = Number(document.getElementById("pixPrecoMinutoVortex")?.value);
+    const tempo = Number(document.getElementById("pixMinutosFixosVortex")?.value);
+    const valor = Number(document.getElementById("pixValorFixoVortex")?.value);
+    const campos = ["pixPrecoMinutoVortex", "pixMinutosFixosVortex", "pixValorFixoVortex", "pixEquipamentoVortex"].map(chave => document.getElementById(chave)).filter(Boolean);
+    const estados = campos.map(c => c.disabled);
+    botao.disabled = true; botao.textContent = "Salvando...";
+    campos.forEach(c => c.disabled = true); mensagem.textContent = "Salvando preços e tempo...";
+    try {
+      const salvo = await gravarPrecosEquipamentoVortex(id, preco, tempo, valor);
+      if (document.getElementById("pixEquipamentoVortex")?.value !== id) return;
+      atualizarCamposPixVortex();
+      mensagem.textContent = `✓ Configuração salva: ${moedaBR(salvo.preco_minuto)}/minuto. Pacote fixo: ${moedaBR(salvo.valor_tempo)} por ${salvo.tempo_minutos} minuto(s). Agora gere o PIX.`;
+    } catch (erro) { console.error(erro); mensagem.textContent = "Não foi possível salvar: " + (erro.message || "Tente novamente."); }
+    finally { campos.forEach((c,i) => c.disabled = estados[i]); botao.disabled = false; botao.textContent = "Salvar preços e tempo do equipamento"; }
   }
 
   /* NOVOS MÓDULOS VORTEX */
@@ -4538,6 +4600,10 @@ async function carregarControladoresVortex(focoId = null) {
     if (!e) return;
     const online = String(e.status || "").toLowerCase() === "online";
     const ultima = e.ultima_conexao_em ? formatarDataVortex(e.ultima_conexao_em) : "--";
+    const segundosComando = Number(e.tempo_acionamento_segundos);
+    const tempoComando = e.tempo_acionamento_segundos != null && Number.isInteger(segundosComando) && segundosComando > 0
+      ? (segundosComando % 60 === 0 ? `${segundosComando / 60} min` : `${segundosComando} s`)
+      : "--";
 
     detalhe.innerHTML = `
       <h3 class="vortex-section-title">Painel do controlador — ${escaparHtml(e.nome || "Aspirador VORTEX")}</h3>
@@ -4554,7 +4620,8 @@ async function carregarControladoresVortex(focoId = null) {
       </div>
       <div class="vortex-module-box">
         <div class="info">Comando atual</div><strong>${escaparHtml(e.comando || "aguardando")}</strong>
-        <div class="info" style="margin-top:8px;">Tempo: ${Number(e.tempo_minutos || 0)} min • Valor: ${moedaBR(e.valor_tempo || 0)}</div>
+        <div class="info" style="margin-top:8px;">Tempo do comando: ${tempoComando}</div>
+        <div class="info">Pacote configurado: ${Number(e.tempo_minutos || 0)} min • ${moedaBR(e.valor_tempo || 0)}</div>
         <div class="vortex-actions-wide">
           <button type="button" onclick="acionarEquipamento('${e.id}')">Acionar remotamente</button>
           <button type="button" class="secondary" onclick="sincronizarControladorVortex('${e.id}')">Sincronizar</button>
@@ -4612,6 +4679,8 @@ async function carregarPixConfigVortex() {
     document.getElementById("pixValorFixoVortex").value = Number(equipamento?.valor_tempo || 0).toFixed(2);
     document.getElementById("pixMinutosFixosVortex").value = Number(equipamento?.tempo_minutos || 1);
     document.getElementById("pixPrecoMinutoVortex").value = Number(equipamento?.preco_minuto || 0).toFixed(2);
+    const mensagem = document.getElementById("mensagemPrecosPixVortex");
+    if (mensagem) mensagem.textContent = "";
   }
 
   function selecionarModoPixVortex(modo) {
@@ -4625,18 +4694,26 @@ async function carregarPixConfigVortex() {
 
 function obterDadosPixVortex() {
     const id = document.getElementById("pixEquipamentoVortex")?.value;
-    if (!pixEquipamentosCacheVortex.some(e => e.id === id)) throw new Error("Selecione um equipamento disponível para sua conta.");
+    const equipamento = pixEquipamentosCacheVortex.find(e => e.id === id);
+    if (!equipamento) throw new Error("Selecione um equipamento disponível para sua conta.");
+    if (configuracoesSalvandoVortex.has(id)) throw new Error("Aguarde o salvamento dos preços antes de gerar o PIX.");
     let valor, minutos;
     if (pixModoVortex === "fixo") {
       valor = Number(document.getElementById("pixValorFixoVortex")?.value);
       minutos = Number(document.getElementById("pixMinutosFixosVortex")?.value);
+      if (Math.round(valor * 100) !== Math.round(Number(equipamento.valor_tempo) * 100) || minutos !== Number(equipamento.tempo_minutos)) {
+        throw new Error("Você alterou o pacote fixo. Clique em Salvar preços e tempo do equipamento antes de gerar o PIX.");
+      }
     } else {
       const preco = Number(document.getElementById("pixPrecoMinutoVortex")?.value);
       minutos = Number(document.getElementById("pixQtdMinutosVortex")?.value);
-      valor = preco * minutos;
+      if (Math.round(preco * 100) !== Math.round(Number(equipamento.preco_minuto) * 100)) {
+        throw new Error("Você alterou o preço por minuto. Clique em Salvar preços e tempo do equipamento antes de gerar o PIX.");
+      }
+      valor = Number(equipamento.preco_minuto) * minutos;
     }
-    if (!Number.isFinite(valor) || valor < 0.01 || !Number.isSafeInteger(Math.round(valor * 100)) || !Number.isSafeInteger(minutos) || minutos < 1)
-      throw new Error("Informe um valor maior que zero e minutos inteiros a partir de 1.");
+    if (!Number.isFinite(valor) || valor < 0.01 || valor > 10000 || !Number.isSafeInteger(Math.round(valor * 100)) || !Number.isSafeInteger(minutos) || minutos < 1 || minutos > 120)
+      throw new Error("Informe um valor válido e minutos inteiros entre 1 e 120.");
     return { equipamento_id: id, valor: Math.round(valor * 100) / 100, minutos, modo: pixModoVortex };
   }
 
@@ -4657,6 +4734,22 @@ function obterDadosPixVortex() {
   let pixMonitorIntervalVortex = null;
   let pixReferenciaAtualVortex = "";
 
+  async function mensagemErroPixVortex(erro) {
+    try {
+      if (typeof erro?.context?.json === "function") {
+        const resposta = typeof erro.context.clone === "function" ? erro.context.clone() : erro.context;
+        const corpo = await resposta.json();
+        const dados = corpo?.data || corpo;
+        const mensagem = dados?.erro || dados?.error || dados?.message;
+        if (typeof mensagem === "string" && mensagem.trim()) return mensagem.trim().slice(0, 1000);
+      }
+    } catch (_) { /* Preserve a usable message even when the response is not JSON. */ }
+    const mensagem = String(erro?.message || "Tente novamente.");
+    return /Edge Function returned a non-2xx status code/i.test(mensagem)
+      ? "O serviço PIX não conseguiu concluir a solicitação. Consulte o suporte."
+      : mensagem;
+  }
+
 
 async function gerarPixRealVortex() {
     const resumo = document.getElementById("resumoPixVortex");
@@ -4673,7 +4766,9 @@ async function gerarPixRealVortex() {
     try {
       const { data, error } = await db.functions.invoke("criar-pix-vortex", { body: payload });
       if (error) throw error;
-      if (data?.error || data?.data?.error) throw new Error(String(data.error || data.data.error));
+      const resposta = data?.data || data;
+      if (resposta?.sucesso === false || resposta?.erro || resposta?.error)
+        throw new Error(String(resposta.erro || resposta.error || "O serviço PIX não conseguiu concluir a solicitação."));
       const pix = extrairPixRespostaVortex(data);
       if (!pix.copiaCola && !pix.imagem) throw new Error("A cobrança não retornou o QR Code. Confira o serviço PIX antes de tentar novamente.");
       pixReferenciaAtualVortex = pix.referencia;
@@ -4700,7 +4795,7 @@ async function gerarPixRealVortex() {
       else document.getElementById("pixStatusRealVortex").textContent = "Cobrança criada sem referência para acompanhamento. Consulte o histórico para confirmar.";
     } catch (erro) {
       console.error(erro);
-      resumo.textContent = "Não foi possível gerar o PIX. " + (erro.message || "Tente novamente.");
+      resumo.textContent = "Não foi possível gerar o PIX. " + await mensagemErroPixVortex(erro);
     } finally { botao.disabled = false; botao.textContent = "Gerar QR Code PIX"; }
   }
 
