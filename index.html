@@ -1755,6 +1755,11 @@ class="admin-only"
           <p class="info">Clientes cadastrados na plataforma.</p>
           <div id="resumoCentral" class="equipment"></div>
           <div id="financeiroCentralVortex"></div>
+          <label for="pesquisaClientesVortex">Pesquisar clientes</label>
+          <input id="pesquisaClientesVortex" type="search"
+                 placeholder="Digite o nome ou telefone" autocomplete="off"
+                 oninput="filtrarClientesAdminVortex()">
+          <p id="resultadoPesquisaClientesVortex" class="info" role="status" aria-live="polite"></p>
           <div id="listaClientesAdmin"></div>
         </div>
       </div>
@@ -2241,6 +2246,7 @@ class="admin-only"
 
 
   let usuarioEhAdmin = false;
+  let clientesAdminCacheVortex = [];
   let clienteLogado = null;
   let clienteAdminSelecionado = null;
 
@@ -2663,6 +2669,8 @@ if (btnClientesAdmin) {
       const resumoCentral = document.getElementById("resumoCentral");
 
       if (clientesAdminErro) {
+        clientesAdminCacheVortex = [];
+        document.getElementById("resultadoPesquisaClientesVortex").textContent = "";
         if (listaClientesAdmin) {
           listaClientesAdmin.innerHTML =
             '<div class="message">A conta foi reconhecida como ADMIN, mas o Supabase ainda não liberou a leitura administrativa dos clientes.</div>';
@@ -2674,22 +2682,8 @@ if (btnClientesAdmin) {
           resumoCentral.innerHTML =
             `<strong>${clientesVisiveis.length}</strong> cliente(s) visível(is) para a Central.`;
         }
-        if (listaClientesAdmin) {
-          listaClientesAdmin.innerHTML = clientesVisiveis.length
-            ? clientesVisiveis.map(c => `
-                <div class="equipment cliente-admin-card"
-                     role="button"
-                     tabindex="0"
-                     onclick="abrirClienteAdmin('${c.id}')"
-                     onkeydown="if(event.key === 'Enter') abrirClienteAdmin('${c.id}')">
-                  <strong>${escaparHtml(c.nome || "Cliente VORTEX")}</strong>
-                  <div>Telefone: ${escaparHtml(c.telefone || "-")}</div>
-                  <div>Mensalidade: ${Number(c.mensalidade || 50).toLocaleString("pt-BR", {style:"currency", currency:"BRL"})}</div>
-                  <div class="admin-badge">${escaparHtml(String(c.tipo_usuario || "cliente").toUpperCase())}</div>
-                </div>
-              `).join("")
-            : '<div class="message">Nenhum cliente encontrado.</div>';
-        }
+        clientesAdminCacheVortex = clientesVisiveis;
+        filtrarClientesAdminVortex();
       }
     }
 
@@ -3895,6 +3889,29 @@ if (btnClientesAdmin) {
 
   /* CENTRAL - DETALHE INDIVIDUAL DO CLIENTE */
 
+  function filtrarClientesAdminVortex() {
+    if (!usuarioEhAdmin) return;
+    const normalizar = valor => String(valor || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+    const termo = normalizar(document.getElementById("pesquisaClientesVortex").value);
+    const telefoneBusca = termo.replace(/\D/g, "");
+    const encontrados = clientesAdminCacheVortex.filter(c => !termo ||
+      normalizar(c.nome).includes(termo) || normalizar(c.telefone).includes(termo) ||
+      (telefoneBusca && /^[\d\s()+.\-]+$/.test(termo) && String(c.telefone || "").replace(/\D/g, "").includes(telefoneBusca)));
+    document.getElementById("resultadoPesquisaClientesVortex").textContent =
+      `${encontrados.length} de ${clientesAdminCacheVortex.length} cliente(s).`;
+    document.getElementById("listaClientesAdmin").innerHTML = encontrados.length
+      ? encontrados.map(c => `
+          <div class="equipment cliente-admin-card" role="button" tabindex="0"
+               onclick="abrirClienteAdmin('${c.id}')"
+               onkeydown="if(event.key === 'Enter') abrirClienteAdmin('${c.id}')">
+            <strong>${escaparHtml(c.nome || "Cliente VORTEX")}</strong>
+            <div>Telefone: ${escaparHtml(c.telefone || "-")}</div>
+            <div>Mensalidade: ${Number(c.mensalidade ?? 50).toLocaleString("pt-BR", {style:"currency",currency:"BRL"})}</div>
+            <div class="admin-badge">${escaparHtml(String(c.tipo_usuario || "cliente").toUpperCase())}</div>
+          </div>`).join("")
+      : '<div class="message">Nenhum cliente encontrado.</div>';
+  }
+
   function escaparHtml(valor) {
     return String(valor ?? "")
       .replace(/&/g, "&amp;")
@@ -4412,7 +4429,7 @@ async function carregarControladoresVortex(focoId = null) {
           <button type="button" class="secondary" onclick="carregarHistoricoControladorVortex('${e.id}')">Histórico</button>
           <button type="button" class="secondary" disabled title="Disponível após conectar o controlador">Configurar Wi-Fi</button>
           <button type="button" class="secondary" disabled title="Disponível após conectar o controlador">Reiniciar</button>
-          <button type="button" class="secondary" onclick="abrirDadosControladorVortex('${e.id}')">Dados e firmware</button>
+          ${usuarioEhAdmin ? `<button type="button" class="secondary" onclick="abrirDadosControladorVortex('${e.id}')">Dados e firmware</button>` : ""}
         </div>
         <div id="dadosControladorFormularioVortex"></div>
         <div id="historicoControladorVortex"></div>
@@ -4429,6 +4446,7 @@ async function carregarControladoresVortex(focoId = null) {
   ];
 
   function abrirDadosControladorVortex(equipamentoId) {
+    if(!usuarioEhAdmin) return;
     if(!controladoresCacheVortex.some(e=>e.id===equipamentoId)) return;
     const alvo=document.getElementById("dadosControladorFormularioVortex"); if(!alvo) return;
     const dados=dadosControladoresVortex[equipamentoId] || {};
@@ -4449,6 +4467,7 @@ async function carregarControladoresVortex(focoId = null) {
     const campos=[...camposCadastroControladorVortex.map(c=>c[0]),"observacoes"];
     const elementos=campos.map(c=>document.getElementById("controladorCampo_"+c));
     try {
+      if(!usuarioEhAdmin) throw new Error("Apenas a Central/ADM pode cadastrar controladores.");
       if(!controladoresCacheVortex.some(e=>e.id===equipamentoId)) throw new Error("Equipamento não encontrado nesta conta.");
       const dados=Object.fromEntries(campos.map((c,i)=>[c,elementos[i].value.trim()]));
       if(dados.firmware_url) {

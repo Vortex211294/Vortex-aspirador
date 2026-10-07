@@ -25,7 +25,7 @@ O app é publicado pelo GitHub Pages a partir de `main`. Esta revisão adiciona 
 | `supabase/06b_permissoes_agendamento.sql` | Restrição das chamadas internas de cobrança |
 | `supabase/07_mensalidades_30_dias.sql` | Ciclos de 30 dias, bloqueio por cliente e cobrança parcial |
 | `supabase/08_primeiros_recebimentos_mensalidade.sql` | Primeira mensalidade desde o cadastro; primeiros recebimentos líquidos cobrem R$50 |
-| `supabase/09_dados_controlador.sql` | Cadastro manual protegido por proprietário/Central |
+| `supabase/09_dados_controlador.sql` | Cadastro manual exclusivo da Central/ADM |
 | `supabase/functions/` | Código das duas Edge Functions PIX em Sandbox |
 | `tests/` | Testes da interface, PIX, webhook e mensalidades |
 
@@ -43,7 +43,7 @@ O registro de repasse no banco não realiza transferência bancária. Credenciai
 
 ## Validação
 
-70 testes passaram, sem falhas ou testes ignorados, usando Node e PostgreSQL 18.3 embarcado pelo PGlite 0.5.8. Os testes de interface e PIX simulam o banco e o provedor; os testes de assinatura geram chaves ECDSA locais. O agendamento pg_cron é simulado nos testes SQL. O job real de mensalidade foi conferido com execução bem-sucedida. Concorrência entre conexões ainda precisa de teste dedicado.
+72 testes passaram, sem falhas ou testes ignorados, usando Node e PostgreSQL 18.3 embarcado pelo PGlite 0.5.8. Os testes de interface e PIX simulam o banco e o provedor; os testes de assinatura geram chaves ECDSA locais. O agendamento pg_cron é simulado nos testes SQL. O job real de mensalidade foi conferido com execução bem-sucedida. Concorrência entre conexões ainda precisa de teste dedicado.
 
 Para reproduzir em um ambiente de testes:
 
@@ -64,4 +64,6 @@ Sem PGlite, os testes SQL são explicitamente ignorados. Os testes não fazem pa
 - Implementar reconciliação persistente para falhas que excedam as retentativas do provedor e tratar devoluções.
 
 
-Atualização 07/10/2026: cadastro de modelo, serial, SSID, IP, MAC, versão, URL HTTPS e SHA-256 do firmware por equipamento (09_dados_controlador.sql). Dados manuais persistem no Supabase com acesso do proprietário/Central; o cadastro não instala firmware. Gráficos mostram horários de pagamentos PAID em Brasília na vertical e dias da semana na horizontal; valores e minutos ficam nos detalhes dos pontos.
+Atualização 07/10/2026: cadastro de modelo, serial, SSID, IP, MAC, versão, URL HTTPS e SHA-256 do firmware por equipamento (09_dados_controlador.sql). Dados manuais persistem no Supabase com cadastro exclusivo da Central/ADM e leitura do proprietário; o cadastro não instala firmware. Gráficos mostram horários de pagamentos PAID em Brasília na vertical e dias da semana na horizontal; valores e minutos ficam nos detalhes dos pontos.
+
+A Central/ADM pode pesquisar os clientes cadastrados por nome ou telefone, inclusive nomes com acentos e números com formatação.
