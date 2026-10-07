@@ -2110,8 +2110,13 @@ class="admin-only"
             id="mensalidadePagoEm"
           ></div>
 
+          <div class="info" id="mensalidadeDescontado"></div>
+          <div class="info" id="mensalidadeRestante"></div>
+          <div class="info" id="mensalidadeProxima"></div>
+
           <p class="info">
-            Plano mensal VORTEX ASPIRADOR.
+            R$ 50,00 a cada 30 dias. Os primeiros recebimentos líquidos de cada ciclo
+            são destinados à mensalidade. Depois de completá-la, o saldo fica disponível para repasse.
           </p>
 
         </div>
@@ -2259,6 +2264,59 @@ class="admin-only"
       if (!data || data.length < tamanho) return { data: registros, error: null };
     }
     return { data: null, error: new Error("O período contém registros demais. Reduza o período consultado.") };
+  }
+
+  function selecionarMensalidadeVortex(registros) {
+    const ordenadas = [...(registros || [])].sort((a, b) =>
+      String(a.vencimento || "").localeCompare(String(b.vencimento || "")) ||
+      String(a.id || "").localeCompare(String(b.id || "")));
+    const hoje = chaveDataBrasilVortex();
+    return ordenadas.find(m => String(m.status || "").toLowerCase() === "pendente" && m.vencimento <= hoje)
+      || ordenadas.filter(m => String(m.status || "").toLowerCase() === "pago" && m.vencimento <= hoje).at(-1)
+      || ordenadas.find(m => String(m.status || "").toLowerCase() === "pendente")
+      || ordenadas.at(-1) || null;
+  }
+
+  function dataMensalidadeVortex(valor) {
+    const partes = String(valor || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    return partes ? `${partes[3]}/${partes[2]}/${partes[1]}` : "—";
+  }
+
+  function valoresMensalidadeVortex(mensalidade) {
+    const valor = Number(mensalidade.valor);
+    const descontado = Number(mensalidade.valor_descontado || 0);
+    return { valor, descontado, restante: Math.max(0, Math.round((valor - descontado) * 100) / 100) };
+  }
+
+  async function buscarMensalidadesClienteVortex(clienteId) {
+    return buscarTodosVortex(() => db.from("mensalidades")
+      .select("id,cliente_id,valor,valor_descontado,status,vencimento,pago_em")
+      .eq("cliente_id", clienteId));
+  }
+
+  function renderizarMensalidadeVortex(resposta, valorPlano = 50) {
+    document.getElementById("mensalidadeValor").textContent = moedaBR(valorPlano);
+    document.getElementById("mensalidadeVencimento").textContent = "Vencimento: —";
+    document.getElementById("mensalidadeStatus").textContent = resposta.error
+      ? "Status: consulta indisponível" : "Status: sem cobrança registrada";
+    for (const id of ["mensalidadePagoEm", "mensalidadeDescontado", "mensalidadeRestante", "mensalidadeProxima"])
+      document.getElementById(id).textContent = "";
+    if (resposta.error) return;
+    const mensalidade = selecionarMensalidadeVortex(resposta.data);
+    if (!mensalidade) return;
+    const { valor, descontado, restante } = valoresMensalidadeVortex(mensalidade);
+    document.getElementById("mensalidadeValor").textContent = moedaBR(valor);
+    document.getElementById("mensalidadeVencimento").textContent = `Vencimento: ${dataMensalidadeVortex(mensalidade.vencimento)}`;
+    const parcial = String(mensalidade.status).toLowerCase() === "pendente" && descontado > 0 && restante > 0;
+    document.getElementById("mensalidadeStatus").textContent = `Status: ${parcial ? "parcialmente paga" : mensalidade.status || "—"}`;
+    document.getElementById("mensalidadeDescontado").textContent = `Já descontado: ${moedaBR(descontado)}`;
+    document.getElementById("mensalidadeRestante").textContent = `Falta pagar: ${moedaBR(restante)}`;
+    if (mensalidade.pago_em)
+      document.getElementById("mensalidadePagoEm").textContent = `Pago em: ${formatarDataVortex(mensalidade.pago_em)}`;
+    const proxima = [...(resposta.data || [])].filter(m => m.vencimento > chaveDataBrasilVortex())
+      .sort((a,b) => a.vencimento.localeCompare(b.vencimento))[0];
+    if (proxima && proxima.id !== mensalidade.id)
+      document.getElementById("mensalidadeProxima").textContent = `Próximo vencimento: ${dataMensalidadeVortex(proxima.vencimento)}`;
   }
 
   function argumentoJsVortex(valor) {
@@ -2663,101 +2721,8 @@ if (btnClientesAdmin) {
     }
 
     /* MENSALIDADE */
-    document.getElementById("mensalidadeValor").textContent = moedaBR(cliente.mensalidade ?? 50);
-    document.getElementById("mensalidadeVencimento").textContent = "Vencimento: —";
-    document.getElementById("mensalidadeStatus").textContent = "Status: sem cobrança registrada";
-    document.getElementById("mensalidadePagoEm").textContent = "";
-
-    const {
-      data: mensalidade,
-      error: mensalidadeErro
-    } =
-      await db
-        .from("mensalidades")
-        .select("*")
-        .eq(
-          "cliente_id",
-          cliente.id
-        )
-        .order(
-          "vencimento",
-          { ascending: false }
-        )
-        .limit(1)
-        .maybeSingle();
-
-
-    if (mensalidadeErro) document.getElementById("mensalidadeStatus").textContent = "Status: consulta indisponível";
-    if (
-      !mensalidadeErro &&
-      mensalidade
-    ) {
-
-      document
-        .getElementById(
-          "mensalidadeValor"
-        )
-        .innerText =
-          Number(
-            mensalidade.valor
-          )
-          .toLocaleString(
-            "pt-BR",
-            {
-              style: "currency",
-              currency: "BRL"
-            }
-          );
-
-
-      if (
-        mensalidade.vencimento
-      ) {
-
-        const partes =
-          mensalidade
-            .vencimento
-            .split("-");
-
-        document
-          .getElementById(
-            "mensalidadeVencimento"
-          )
-          .innerText =
-            `Vencimento: ${partes[2]}/${partes[1]}/${partes[0]}`;
-
-      }
-
-
-      document
-        .getElementById(
-          "mensalidadeStatus"
-        )
-        .innerText =
-          `Status: ${mensalidade.status || "--"}`;
-
-
-      const pagoEm =
-        document
-          .getElementById(
-            "mensalidadePagoEm"
-          );
-
-
-      if (
-        mensalidade.pago_em
-      ) {
-
-        pagoEm.innerText =
-          `Pago em: ${formatarDataVortex(mensalidade.pago_em)}`;
-
-      } else {
-
-        pagoEm.innerText = "";
-
-      }
-
-    }
+    const mensalidadesResp = await buscarMensalidadesClienteVortex(cliente.id);
+    renderizarMensalidadeVortex(mensalidadesResp, cliente.mensalidade ?? 50);
 
 
     /* EQUIPAMENTOS */
@@ -4164,12 +4129,7 @@ if (btnClientesAdmin) {
         .select("id,codigo,nome,preco_minuto,status,tempo_minutos,valor_tempo,cliente_id,comando,tempo_acionamento_segundos,comando_criado_em,comando_recebido_em,acionamento_finalizado_em")
         .eq("cliente_id", clienteId)),
       buscarTodosVortex(() => db.from("pagamentos").select("*").eq("cliente_id", clienteId).eq("status", "PAID").order("criado_em", { ascending: false })),
-      db.from("mensalidades")
-        .select("*")
-        .eq("cliente_id", clienteId)
-        .order("vencimento", { ascending: false })
-        .limit(1)
-        .maybeSingle(),
+      buscarMensalidadesClienteVortex(clienteId),
       db.rpc("saldo_disponivel_cliente", { p_cliente_id: clienteId }),
       buscarTodosVortex(() => db.from("repasses_clientes").select("id,valor,status,descricao,criado_em").eq("cliente_id", clienteId).order("criado_em", { ascending: false }))
     ]);
@@ -4186,7 +4146,7 @@ if (btnClientesAdmin) {
     const equipamentos = equipamentosResp.data || [];
     const pagamentos = pagamentosResp.data || [];
     if (pagamentosResp.error) { infoEl.textContent = "Não foi possível carregar o financeiro completo deste cliente. Tente novamente."; return; }
-    const mensalidade = mensalidadeResp.data || null;
+    const mensalidade = mensalidadeResp.error ? null : selecionarMensalidadeVortex(mensalidadeResp.data);
     const agora = new Date();
 
     const faturamentoHoje = pagamentos.reduce((total, p) => {
@@ -4229,7 +4189,9 @@ if (btnClientesAdmin) {
       <div class="equipment"><div class="info">Equipamentos online</div><strong>${online} de ${equipamentos.length}</strong></div>
       <div class="equipment"><div class="info">Saldo disponível</div><strong>${saldoDisponivel === null ? "—" : moedaBR(saldoDisponivel)}</strong></div>
       <div class="equipment"><div class="info">Mensalidade</div><strong>${moedaBR(cliente.mensalidade || 50)}</strong></div>
-      <div class="equipment"><div class="info">Status mensalidade</div><strong>${escaparHtml(mensalidade?.status || "--")}</strong></div>
+      <div class="equipment"><div class="info">Status mensalidade</div><strong>${escaparHtml(mensalidadeResp.error ? "Consulta indisponível" : mensalidade?.status || "Sem cobrança registrada")}</strong>
+        ${mensalidade ? `<div class="info">Vencimento: ${dataMensalidadeVortex(mensalidade.vencimento)}</div><div class="info">Já descontado: ${moedaBR(valoresMensalidadeVortex(mensalidade).descontado)}</div><div class="info">Falta pagar: ${moedaBR(valoresMensalidadeVortex(mensalidade).restante)}</div>` : ""}
+      </div>
     `;
 
     if (financeiroEl) {
