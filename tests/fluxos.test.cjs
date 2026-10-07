@@ -72,6 +72,7 @@ function ambiente({ tables = {}, rpc, invoke, auth } = {}) {
     }
   };
   const context = vm.createContext({document, Intl, Date, Promise, JSON, console: {error() {}},
+    URL,
     window: { supabase: { createClient: () => db }, addEventListener() {}, innerWidth:1200 },
     navigator: { clipboard: { writeText: async () => {} } }, localStorage: {getItem(){return null;},setItem(){}},
     location: {origin:'https://example.com',pathname:'/',reload(){}}, alert() {},
@@ -334,4 +335,81 @@ test('monthly query failure in Central is explicit instead of showing an invente
   const a=ambiente({tables:{clientes:[{id:'c1',nome:'Teste'}],mensalidades:{data:null,error:{message:'denied'}}}});
   a.run('usuarioEhAdmin=true');await a.run("abrirClienteAdmin('c1')");
   assert.match(a.el('detalheClienteResumo').innerHTML,/Consulta indisponível/);
+});
+
+test('hour charts use only confirmed payments in Brazil current week, retain cents and omit invalid dates', () => {
+  const a=ambiente();
+  const out=a.run(`pontosHorariosVortex([
+    {status:'PAID',pago_em:'2026-10-06T01:30:00Z',valor_bruto:4.25,minutos:2,equipamento_id:'e1'},
+    {status:'WAITING',pago_em:'2026-10-06T12:00:00Z',valor_bruto:10},
+    {status:'PAID',pago_em:'invalid'},
+    {status:'PAID',pago_em:'2026-09-30T12:00:00Z'},
+    {status:'PAID',pago_em:'2026-10-06T03:00:00Z',valor_bruto:1,minutos:1,equipamento_id:'e1'}
+  ], ['2026-10-05','2026-10-06','2026-10-07','2026-10-08','2026-10-09','2026-10-10','2026-10-11'],'e1')`);
+  assert.equal(out.length,2); assert.equal(out[0].x,0); assert.equal(out[0].hora,'22:30');
+  assert.equal(out[0].y,22.5); assert.equal(out[0].valor,4.25);assert.equal(out[1].hora,'00:00');
+  const options=a.run('opcoesGraficoHorariosVortex([])');
+  assert.equal(options.scales.y.ticks.callback(3),'03:00');assert.equal(options.scales.x.ticks.callback(0),'Seg');
+  assert.equal(options.scales.x.grid.display,true);
+});
+
+test('admin controller data reloads from database and saves through authorized RPC without motor command', async () => {
+  const config={equipamento_id:'e1',modelo:'ESP32',serial:'S1',firmware_versao:'1.0'};
+  const a=ambiente({tables:{equipamentos:[{id:'e1',cliente_id:'c1'}],vortex_dados_controlador:[config]},rpc:async(name,p)=>({data:{...p.p_dados,equipamento_id:p.p_equipamento_id},error:null})});
+  a.run('usuarioEhAdmin=true');await a.run("carregarControladoresVortex('e1')");a.run("abrirDadosControladorVortex('e1')");
+  assert.match(a.el('dadosControladorFormularioVortex').innerHTML,/ESP32/);
+  for(const key of ['modelo','serial','ssid','ip','mac','firmware_versao','firmware_url','firmware_sha256','observacoes']) a.el('controladorCampo_'+key).value='';
+  a.el('controladorCampo_modelo').value=' ESP32 ';a.el('controladorCampo_firmware_url').value='https://example.com/firmware.bin';
+  await a.run("salvarDadosControladorVortex('e1')");
+  assert.equal(a.chamadas.length,1);assert.equal(a.chamadas[0].name,'salvar_dados_controlador_vortex');
+  assert.equal(a.chamadas[0].payload.p_dados.modelo,'ESP32');assert.match(a.el('dadosControladorMensagemVortex').textContent,/salvos/);
+  assert.equal(a.consultas.find(q=>q.table==='vortex_dados_controlador').sorts[0].column,'equipamento_id');
+});
+
+test('firmware unsafe URLs and failed saves cannot claim success or leave save blocked', async () => {
+  const a=ambiente({tables:{equipamentos:[{id:'e1',cliente_id:'c1'}]},rpc:async()=>({data:null,error:{message:'Sem permissão'}})});
+  a.run('usuarioEhAdmin=true');await a.run("carregarControladoresVortex('e1')");a.run("abrirDadosControladorVortex('e1')");
+  a.el('controladorCampo_firmware_url').value='javascript:alert(1)';await a.run("salvarDadosControladorVortex('e1')");
+  assert.equal(a.chamadas.length,0);assert.match(a.el('dadosControladorMensagemVortex').textContent,/HTTPS/);
+  a.el('controladorCampo_firmware_url').value='https://user:password@example.com/file';await a.run("salvarDadosControladorVortex('e1')");assert.equal(a.chamadas.length,0);
+  a.el('controladorCampo_firmware_url').value='';await a.run("salvarDadosControladorVortex('e1')");
+  assert.match(a.el('dadosControladorMensagemVortex').textContent,/Sem permissão/);assert.equal(a.el('salvarDadosControladorBotao').disabled,false);
+});
+
+
+test('client can see registered controller data but cannot open or save registration',async()=>{
+ const a=ambiente({tables:{equipamentos:[{id:'e1',cliente_id:'c1'}],vortex_dados_controlador:[{equipamento_id:'e1',modelo:'ESP32',firmware_versao:'1.2'}]}});
+ await a.run("carregarControladoresVortex('e1')");assert.match(a.el('detalheControladorVortex').innerHTML,/ESP32/);
+ assert.ok(!a.el('detalheControladorVortex').innerHTML.includes('>Dados e firmware</button>'));
+ a.run("abrirDadosControladorVortex('e1')");assert.equal(a.el('dadosControladorFormularioVortex').innerHTML,'');
+ await a.run("salvarDadosControladorVortex('e1')");assert.equal(a.chamadas.length,0);
+});
+
+
+test('Central client search ignores accents, matches formatted phones, and restores all results',()=>{
+ const a=ambiente();a.run(`usuarioEhAdmin=true;clientesAdminCacheVortex=[{id:'c1',nome:'João Proença',telefone:'(15) 99999-1234'},{id:'c2',nome:'Ana',telefone:'11988887777'}]`);
+ for(const term of ['JOAO','proenca','15999991234']) {
+   a.el('pesquisaClientesVortex').value=term;a.run('filtrarClientesAdminVortex()');
+   assert.match(a.el('listaClientesAdmin').innerHTML,/João/);assert.ok(!a.el('listaClientesAdmin').innerHTML.includes('>Ana<'));
+   assert.equal(a.el('resultadoPesquisaClientesVortex').textContent,'1 de 2 cliente(s).');
+ }
+ a.el('pesquisaClientesVortex').value='inexistente';a.run('filtrarClientesAdminVortex()');assert.match(a.el('listaClientesAdmin').innerHTML,/Nenhum cliente/);
+ a.el('pesquisaClientesVortex').value='';a.run('filtrarClientesAdminVortex()');assert.equal(a.el('resultadoPesquisaClientesVortex').textContent,'2 de 2 cliente(s).');
+ assert.match(a.el('listaClientesAdmin').innerHTML,/abrirClienteAdmin/);
+});
+
+
+test('admin registration validates then saves correct selected client and prices',async()=>{
+ const a=ambiente({tables:{clientes:[{id:'c1',nome:'João',ativo:true}],equipamentos:[]},rpc:async(name,p)=>({data:{id:'e2',cliente_id:p.p_cliente_id},error:null})});
+ a.run('usuarioEhAdmin=true');await a.run("abrirNovoControladorAdminVortex('c1')");assert.match(a.el('novoControladorFormularioVortex').innerHTML,/João/);
+ for(const [id,value]of Object.entries({novoControladorClienteVortex:'c1',novoControladorCodigoVortex:'VTX-NEW',novoControladorNomeVortex:'Novo',novoControladorPrecoVortex:'5',novoControladorTempoVortex:'3',novoControladorValorVortex:'15'}))a.el(id).value=value;
+ await a.run('cadastrarNovoControladorAdminVortex()');assert.equal(a.chamadas[0].name,'cadastrar_controlador_admin_vortex');assert.equal(a.chamadas[0].payload.p_cliente_id,'c1');assert.equal(a.chamadas[0].payload.p_preco_minuto,5);assert.equal(a.el('novoControladorSalvarVortex').disabled,false);
+ a.run('usuarioEhAdmin=false');await a.run('cadastrarNovoControladorAdminVortex()');assert.equal(a.chamadas.length,1);
+});
+test('admin client editing saves to selected client instead of signed-in ADM account',async()=>{
+ const a=ambiente({rpc:async(name,p)=>({data:{cliente:{id:p.p_cliente_id,nome:'João',ativo:true,mensalidade:50},recebimento:null},error:null})});
+ a.run('usuarioEhAdmin=true;clienteAdminSelecionado="c2"');await a.run('abrirConfiguracoesClienteAdminVortex()');assert.match(a.el('configuracoesClienteAdminFormularioVortex').innerHTML,/Configurações do cliente/);
+ a.el('adminCliente_nome').value='João';a.el('adminCliente_mensalidade').value='50';a.el('adminCliente_ativo').value='true';
+ await a.run("salvarConfiguracoesClienteAdminVortex('cadastro')");assert.equal(a.chamadas.at(-1).payload.p_cliente_id,'c2');assert.equal(a.chamadas.at(-1).payload.p_dados.nome,'João');assert.match(a.el('adminClienteMensagemVortex').textContent,/salvas/);
+ a.run('usuarioEhAdmin=false');await a.run("salvarConfiguracoesClienteAdminVortex('cadastro')");assert.equal(a.chamadas.length,2);
 });
