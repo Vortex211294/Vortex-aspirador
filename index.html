@@ -1668,7 +1668,7 @@ class="admin-only"
           <section class="dash-panel">
 
             <h3>
-              ▥ Faturamento por equipamento
+              ▥ Horários dos pagamentos por equipamento
             </h3>
 
             <div class="chart-box">
@@ -1688,7 +1688,7 @@ class="admin-only"
               <button type="button" onclick="filtrarDiaSemanaVortex('dashboard-equip',6,this)">Sáb</button>
               <button type="button" onclick="filtrarDiaSemanaVortex('dashboard-equip',0,this)">Dom</button>
             </div>
-            <div class="vortex-week-caption">Seg → Dom • toque em um dia para filtrar o faturamento por equipamento</div>
+            <div class="vortex-week-caption">Seg → Dom • toque em um dia para filtrar os horários por equipamento</div><div id="graficoEquipamentosVazio" class="vortex-week-caption"></div>
 
           </section>
 
@@ -1707,14 +1707,14 @@ class="admin-only"
           <section class="dash-panel">
 
             <h3>
-              ↗ Faturamento — semana atual (Seg → Dom)
+              ↗ Horários dos pagamentos — semana atual
             </h3>
 
             <div class="chart-box small">
 
               <canvas
                 id="graficoDias"
-              ></canvas>
+              ></canvas><div id="graficoDiasVazio" class="vortex-week-caption"></div>
 
             </div>
 
@@ -2254,11 +2254,11 @@ class="admin-only"
     return consulta;
   }
 
-  async function buscarTodosVortex(criarConsulta) {
+  async function buscarTodosVortex(criarConsulta, ordenarPor = "id") {
     const registros = [];
     const tamanho = 100;
     for (let inicio = 0; inicio < 100000; inicio += tamanho) {
-      const { data, error } = await criarConsulta().order("id", { ascending: true }).range(inicio, inicio + tamanho - 1);
+      const { data, error } = await criarConsulta().order(ordenarPor, { ascending: true }).range(inicio, inicio + tamanho - 1);
       if (error) return { data: null, error };
       registros.push(...(data || []));
       if (!data || data.length < tamanho) return { data: registros, error: null };
@@ -3889,196 +3889,7 @@ if (btnClientesAdmin) {
     );
 
 
-    /* FATURAMENTO POR DIA */
-
-    const porDia = {};
-
-
-    pagamentos
-      .forEach(p => {
-
-        const d =
-          new Date(
-            p.pago_em ||
-            p.criado_em
-          );
-
-        if (Number.isNaN(d.getTime())) return;
-
-        const chave = chaveDataBrasilVortex(d);
-
-        porDia[chave] =
-          (
-            porDia[chave] ||
-            0
-          ) +
-          (
-            Number(
-              p.valor_bruto
-            ) ||
-            0
-          );
-
-      });
-
-
-    /* Semana atual fixa: sempre começa na segunda e termina no domingo */
-    const dias = [];
-    const inicioGrafico = inicioSemanaVortex();
-
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(inicioGrafico);
-      d.setDate(inicioGrafico.getDate() + i);
-      const chave = chaveDataLocalVortex(d);
-      dias.push(chave);
-      if (!(chave in porDia)) porDia[chave] = 0;
-    }
-
-
-    const canvasDias =
-      document
-        .getElementById(
-          "graficoDias"
-        );
-
-
-    if (
-      canvasDias
-    ) {
-
-      if (
-        graficoDiasVortex
-      ) {
-
-        graficoDiasVortex
-          .destroy();
-
-      }
-
-
-      graficoDiasVortex =
-        new Chart(
-          canvasDias,
-          {
-
-            type: "line",
-
-            data: {
-
-              labels:
-                dias
-                  .map(d => {
-
-                    const partes = d.split("-");
-                    const dataLabel = new Date(`${d}T12:00:00`);
-                    const nomeDia = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"][dataLabel.getDay()];
-
-                    return `${nomeDia} ${partes[2]}/${partes[1]}`;
-
-                  }),
-
-              datasets: [
-
-                {
-
-                  label: "Faturamento real",
-
-                  data:
-                    dias
-                      .map(
-                        d =>
-                          porDia[d]
-                      ),
-
-                  borderColor:
-                    "#22a6ff",
-
-                  backgroundColor:
-                    "rgba(34,166,255,.16)",
-
-                  fill: true,
-
-                  tension: .35,
-
-                  pointRadius: 3,
-
-                  pointBackgroundColor:
-                    "#eaf6ff"
-
-                }
-
-              ]
-
-            },
-
-            options: {
-
-              responsive: true,
-
-              maintainAspectRatio:
-                false,
-
-              plugins: {
-
-                legend: {
-                  display: false
-                }
-
-              },
-
-              scales: {
-
-                x: {
-
-                  ticks: {
-                    color: "#dbeafe"
-                  },
-
-                  grid: {
-
-                    color:
-                      "rgba(255,255,255,.04)"
-
-                  }
-
-                },
-
-                y: {
-
-                  beginAtZero: true,
-
-                  ticks: {
-
-                    color: "#dbeafe",
-
-                    callback:
-                      value =>
-                        "R$ " +
-                        Number(value)
-                          .toLocaleString(
-                            "pt-BR"
-                          )
-
-                  },
-
-                  grid: {
-
-                    color:
-                      "rgba(255,255,255,.08)"
-
-                  }
-
-                }
-
-              }
-
-            }
-
-          }
-        );
-
-    }
-
+    renderizarGraficoHorariosSemanaVortex();
   }
 
 
@@ -4507,6 +4318,8 @@ async function salvarConfiguracao(equipamentoId) {
   /* NOVOS MÓDULOS VORTEX */
 
   let controladoresCacheVortex = [];
+  let dadosControladoresVortex = {};
+  let controladorSalvandoVortex = false;
   let pixModoVortex = "fixo";
   let pixEquipamentosCacheVortex = [];
 
@@ -4524,10 +4337,16 @@ async function carregarControladoresVortex(focoId = null) {
     lista.innerHTML = '<div class="message">Carregando controladores...</div>';
     if (detalhe) detalhe.innerHTML = "";
     controladoresCacheVortex = [];
+    dadosControladoresVortex = {};
     try {
       const { data, error } = await buscarTodosVortex(() => consultaClienteVortex("equipamentos",
-        "id,cliente_id,codigo,nome,status,comando,tempo_minutos,valor_tempo,preco_minuto,tempo_acionamento_segundos,comando_criado_em,comando_recebido_em,acionamento_finalizado_em"));
+        "id,cliente_id,codigo,nome,status,comando,tempo_minutos,valor_tempo,preco_minuto,tempo_acionamento_segundos,comando_criado_em,comando_recebido_em,acionamento_finalizado_em,ultima_conexao_em"));
       if (error) throw error;
+      if (data?.length) {
+        const config = await buscarTodosVortex(() => db.from("vortex_dados_controlador").select("*").in("equipamento_id",data.map(e=>e.id)), "equipamento_id");
+        if (config.error) throw config.error;
+        dadosControladoresVortex = Object.fromEntries((config.data || []).map(d=>[d.equipamento_id,d]));
+      }
       controladoresCacheVortex = data || [];
       if (!data?.length) { lista.innerHTML = '<div class="message">Nenhum equipamento/controlador encontrado.</div>'; return; }
       lista.innerHTML = data.map(e => {
@@ -4561,6 +4380,7 @@ async function carregarControladoresVortex(focoId = null) {
     const e = controladoresCacheVortex.find(x => x.id === equipamentoId);
     if (!e) return;
     const online = String(e.status || "").toLowerCase() === "online";
+    const cadastro = dadosControladoresVortex[e.id] || {};
     const ultima = e.ultima_conexao_em ? formatarDataVortex(e.ultima_conexao_em) : "--";
     const segundosComando = Number(e.tempo_acionamento_segundos);
     const tempoComando = e.tempo_acionamento_segundos != null && Number.isInteger(segundosComando) && segundosComando > 0
@@ -4573,11 +4393,13 @@ async function carregarControladoresVortex(focoId = null) {
         <div class="vortex-module-box"><div class="info">Status</div><strong class="${online ? "status-online" : "status-offline"}">${online ? "ONLINE" : "OFFLINE"}</strong></div>
         <div class="vortex-module-box"><div class="info">Código / serial</div><strong>${escaparHtml(e.codigo || "-")}</strong></div>
         <div class="vortex-module-box"><div class="info">Última conexão</div><strong>${escaparHtml(ultima)}</strong></div>
-        <div class="vortex-module-box"><div class="info">Wi-Fi / SSID</div><strong>--</strong><div class="vortex-badge pending">Aguardando controlador</div></div>
+        <div class="vortex-module-box"><div class="info">SSID cadastrado</div><strong>${escaparHtml(cadastro.ssid || "--")}</strong><div class="vortex-badge pending">Informado manualmente</div></div>
         <div class="vortex-module-box"><div class="info">Sinal Wi-Fi</div><strong>-- dBm</strong><div class="vortex-badge pending">Aguardando controlador</div></div>
         <div class="vortex-module-box"><div class="info">Comando recebido</div><strong>${escaparHtml(formatarDataVortex(e.comando_recebido_em))}</strong></div>
         <div class="vortex-module-box"><div class="info">Último acionamento finalizado</div><strong>${escaparHtml(formatarDataVortex(e.acionamento_finalizado_em))}</strong></div>
-        <div class="vortex-module-box"><div class="info">Firmware</div><strong>--</strong></div>
+        <div class="vortex-module-box"><div class="info">Firmware cadastrado</div><strong>${escaparHtml(cadastro.firmware_versao || "--")}</strong></div>
+        <div class="vortex-module-box"><div class="info">Modelo / serial cadastrado</div><strong>${escaparHtml(cadastro.modelo || "--")} • ${escaparHtml(cadastro.serial || "--")}</strong></div>
+        <div class="vortex-module-box"><div class="info">IP / MAC cadastrado</div><strong>${escaparHtml(cadastro.ip || "--")} • ${escaparHtml(cadastro.mac || "--")}</strong></div>
         <div class="vortex-module-box"><div class="info">Último comando enviado</div><strong>${escaparHtml(formatarDataVortex(e.comando_criado_em))}</strong></div>
       </div>
       <div class="vortex-module-box">
@@ -4590,11 +4412,59 @@ async function carregarControladoresVortex(focoId = null) {
           <button type="button" class="secondary" onclick="carregarHistoricoControladorVortex('${e.id}')">Histórico</button>
           <button type="button" class="secondary" disabled title="Disponível após conectar o controlador">Configurar Wi-Fi</button>
           <button type="button" class="secondary" disabled title="Disponível após conectar o controlador">Reiniciar</button>
-          <button type="button" class="secondary" disabled title="Disponível após conectar o controlador">Firmware</button>
+          <button type="button" class="secondary" onclick="abrirDadosControladorVortex('${e.id}')">Dados e firmware</button>
         </div>
+        <div id="dadosControladorFormularioVortex"></div>
         <div id="historicoControladorVortex"></div>
       </div>`;
     detalhe.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  const camposCadastroControladorVortex = [
+    ["modelo","Modelo / placa",120,"Ex.: ESP32"], ["serial","Número de série",120,"Serial do controlador"],
+    ["ssid","Rede Wi-Fi / SSID",120,"Nome da rede"], ["ip","Endereço IP",120,"Ex.: 192.168.1.50"],
+    ["mac","Endereço MAC",120,"AA:BB:CC:DD:EE:FF"], ["firmware_versao","Versão do firmware",120,"Ex.: 1.0.0"],
+    ["firmware_url","Endereço HTTPS do firmware",1000,"https://.../firmware.bin"],
+    ["firmware_sha256","SHA-256 do arquivo (opcional)",64,"64 caracteres hexadecimais"]
+  ];
+
+  function abrirDadosControladorVortex(equipamentoId) {
+    if(!controladoresCacheVortex.some(e=>e.id===equipamentoId)) return;
+    const alvo=document.getElementById("dadosControladorFormularioVortex"); if(!alvo) return;
+    const dados=dadosControladoresVortex[equipamentoId] || {};
+    alvo.innerHTML=`<h3 class="vortex-section-title">Cadastro do controlador e firmware</h3>
+      <p class="info">Dados informados manualmente. A instalação do firmware depende do controlador compatível conectado.</p>
+      <div class="vortex-module-grid two">${camposCadastroControladorVortex.map(([chave,label,max,placeholder])=>
+        `<div class="vortex-field"><label for="controladorCampo_${chave}">${label}</label><input id="controladorCampo_${chave}" type="text" maxlength="${max}" placeholder="${placeholder}" value="${escaparHtml(dados[chave] || "")}"></div>`).join("")}</div>
+      <div class="vortex-field"><label for="controladorCampo_observacoes">Observações</label><textarea id="controladorCampo_observacoes" maxlength="2000" rows="3">${escaparHtml(dados.observacoes || "")}</textarea></div>
+      <div class="vortex-actions-wide"><button id="salvarDadosControladorBotao" type="button" onclick="salvarDadosControladorVortex('${equipamentoId}')">Salvar dados e firmware</button></div>
+      <div id="dadosControladorMensagemVortex" class="message"></div>`;
+    alvo.scrollIntoView({behavior:"smooth",block:"start"});
+  }
+
+  async function salvarDadosControladorVortex(equipamentoId) {
+    if(controladorSalvandoVortex) return;
+    const mensagem=document.getElementById("dadosControladorMensagemVortex"), botao=document.getElementById("salvarDadosControladorBotao");
+    if(!mensagem || !botao) return;
+    const campos=[...camposCadastroControladorVortex.map(c=>c[0]),"observacoes"];
+    const elementos=campos.map(c=>document.getElementById("controladorCampo_"+c));
+    try {
+      if(!controladoresCacheVortex.some(e=>e.id===equipamentoId)) throw new Error("Equipamento não encontrado nesta conta.");
+      const dados=Object.fromEntries(campos.map((c,i)=>[c,elementos[i].value.trim()]));
+      if(dados.firmware_url) {
+        let url; try {url=new URL(dados.firmware_url);} catch {throw new Error("Informe um endereço HTTPS válido para o firmware.");}
+        if(url.protocol!=="https:" || url.username || url.password) throw new Error("Use um endereço HTTPS sem credenciais para o firmware.");
+      }
+      if(dados.mac && !/^([a-f0-9]{2}:){5}[a-f0-9]{2}$/i.test(dados.mac)) throw new Error("Informe o MAC no formato AA:BB:CC:DD:EE:FF.");
+      if(dados.firmware_sha256 && !/^[a-f0-9]{64}$/i.test(dados.firmware_sha256)) throw new Error("SHA-256 deve ter 64 caracteres hexadecimais.");
+      controladorSalvandoVortex=true; botao.disabled=true; elementos.forEach(e=>e.disabled=true); mensagem.textContent="Salvando dados...";
+      const {data,error}=await db.rpc("salvar_dados_controlador_vortex",{p_equipamento_id:equipamentoId,p_dados:dados});
+      if(error) throw error;
+      if(!data || data.equipamento_id!==equipamentoId) throw new Error("O servidor não confirmou o cadastro.");
+      dadosControladoresVortex[equipamentoId]=data;
+      mensagem.textContent="✓ Dados e referência do firmware salvos. O cadastro estará disponível ao atualizar a página.";
+    } catch(erro) {mensagem.textContent="Não foi possível salvar: "+(erro.message || "Tente novamente.");}
+    finally {controladorSalvandoVortex=false;botao.disabled=false;elementos.forEach(e=>e.disabled=false);}
   }
 
   async function sincronizarControladorVortex(equipamentoId) {
@@ -4984,70 +4854,78 @@ let pixMonitorGeracaoVortex = 0;
     });
   }
 
+  function semanaGraficoHorariosVortex() {
+    const inicio = inicioSemanaVortex();
+    return Array.from({length:7}, (_,i) => {
+      const d = new Date(inicio); d.setDate(inicio.getDate()+i);
+      return chaveDataLocalVortex(d);
+    });
+  }
+
+  function pontosHorariosVortex(pagamentos, dias, equipamentoId = null, diaSemana = null) {
+    return pagamentos.filter(p => String(p.status || "").toUpperCase() === "PAID")
+      .filter(p => equipamentoId === null || p.equipamento_id === equipamentoId)
+      .map(p => {
+        const data = new Date(p.pago_em || p.criado_em);
+        if (Number.isNaN(data.getTime())) return null;
+        const dia = chaveDataBrasilVortex(data), x = dias.indexOf(dia);
+        if (x < 0 || (diaSemana !== null && !mesmoDiaSemanaAtualVortex(data, diaSemana))) return null;
+        const partes = new Intl.DateTimeFormat("pt-BR", {timeZone:"America/Sao_Paulo",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(data);
+        const h = Number(partes.find(v => v.type === "hour").value);
+        const m = Number(partes.find(v => v.type === "minute").value);
+        return {x, y:h+m/60, hora:`${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`, dia,
+          valor:Number(p.valor_bruto || 0), minutos:Number(p.minutos || 0), equipamento_id:p.equipamento_id, instante:data.getTime()};
+      }).filter(Boolean).sort((a,b) => a.instante-b.instante);
+  }
+
+  function opcoesGraficoHorariosVortex(dias) {
+    const nomes = ["Seg","Ter","Qua","Qui","Sex","Sáb","Dom"];
+    return {
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:"nearest",intersect:true},
+      plugins:{legend:{display:false},tooltip:{callbacks:{
+        title:items => { const p=items[0]?.raw; return p ? `${nomes[p.x]} ${p.dia.split("-").reverse().slice(0,2).join("/")} • ${p.hora}` : ""; },
+        label:ctx => `${ctx.dataset.label}: ${moedaBR(ctx.raw.valor)} • ${ctx.raw.minutos} min`
+      }}},
+      scales:{
+        x:{type:"linear",min:0,max:6,title:{display:true,text:"Dias da semana",color:"#dbeafe"},
+          ticks:{stepSize:1,color:"#dbeafe",callback:v=>nomes[v] || ""},
+          grid:{display:true,drawOnChartArea:true,color:"rgba(147,197,253,.25)",lineWidth:1}},
+        y:{type:"linear",min:0,max:24,title:{display:true,text:"Horário (Brasília)",color:"#dbeafe"},
+          ticks:{stepSize:3,color:"#dbeafe",callback:v=>`${String(v).padStart(2,"0")}:00`},
+          grid:{display:true,drawOnChartArea:true,color:"rgba(147,197,253,.20)",lineWidth:1}}
+      }
+    };
+  }
+
+  function dadosLinhaHorariosVortex(label, pontos, cor) {
+    return {label,data:pontos,borderColor:cor,backgroundColor:cor,showLine:true,fill:false,
+      tension:0,pointRadius:4,pointHoverRadius:7,borderWidth:2,spanGaps:false};
+  }
+
   function renderizarGraficoEquipamentosPorDiaVortex(diaSemana = null) {
     if (typeof Chart === "undefined") return;
+    const canvas=document.getElementById("graficoEquipamentos"); if(!canvas) return;
+    const equipamentos=window.vortexDashboardEquipamentos || window.vortexEquipamentosAtuais || [];
+    const pagamentos=window.vortexDashboardPagamentos || window.vortexPagamentosAtuais || [];
+    const dias=semanaGraficoHorariosVortex(), cores=["#22a6ff","#22d3ee","#a78bfa","#4ade80","#fbbf24"];
+    const datasets=equipamentos.map((e,i)=>dadosLinhaHorariosVortex(e.nome || e.codigo || "VORTEX",
+      pontosHorariosVortex(pagamentos,dias,e.id,diaSemana),cores[i%cores.length]));
+    if(graficoEquipamentosVortex) graficoEquipamentosVortex.destroy();
+    graficoEquipamentosVortex=new Chart(canvas,{type:"line",data:{datasets},options:opcoesGraficoHorariosVortex(dias)});
+    const vazio=document.getElementById("graficoEquipamentosVazio");
+    if(vazio) vazio.textContent=datasets.some(d=>d.data.length) ? "Cada ponto é um PIX confirmado. Toque para ver valor e duração." : "Nenhum PIX confirmado nesta semana ou no dia selecionado.";
+  }
 
-    const canvas = document.getElementById("graficoEquipamentos");
-    if (!canvas) return;
-
-    const equipamentos = window.vortexDashboardEquipamentos || window.vortexEquipamentosAtuais || [];
-    const pagamentos = window.vortexDashboardPagamentos || window.vortexPagamentosAtuais || [];
-    const filtrados = diaSemana === null
-      ? pagamentos
-      : pagamentos.filter(p => mesmoDiaSemanaAtualVortex(p.pago_em || p.criado_em, diaSemana));
-
-    const totais = {};
-    filtrados.forEach(p => {
-      if (!p.equipamento_id) return;
-      totais[p.equipamento_id] = (totais[p.equipamento_id] || 0) + Number(p.valor_bruto || 0);
-    });
-
-    const nomesDias = {0:"Dom",1:"Seg",2:"Ter",3:"Qua",4:"Qui",5:"Sex",6:"Sáb"};
-    const nomes = equipamentos.map(e => e.nome || e.codigo || "VORTEX");
-    const valores = equipamentos.map(e => totais[e.id] || 0);
-
-    if (graficoEquipamentosVortex) graficoEquipamentosVortex.destroy();
-
-    graficoEquipamentosVortex = new Chart(canvas, {
-      type: "bar",
-      data: {
-        labels: nomes,
-        datasets: [{
-          label: diaSemana === null ? "Faturamento total" : `Faturamento • ${nomesDias[Number(diaSemana)]}`,
-          data: valores,
-          backgroundColor: "#118cff",
-          borderColor: "#39a9ff",
-          borderWidth: 1,
-          borderRadius: 6
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: ctx => `${ctx.dataset.label}: ${moedaBR(ctx.raw || 0)}`
-            }
-          }
-        },
-        scales: {
-          x: {
-            ticks: { color: "#dbeafe" },
-            grid: { color: "rgba(255,255,255,.04)" }
-          },
-          y: {
-            beginAtZero: true,
-            ticks: {
-              color: "#dbeafe",
-              callback: value => "R$ " + Number(value).toLocaleString("pt-BR")
-            },
-            grid: { color: "rgba(255,255,255,.08)" }
-          }
-        }
-      }
-    });
+  function renderizarGraficoHorariosSemanaVortex() {
+    if(typeof Chart === "undefined") return;
+    const canvas=document.getElementById("graficoDias"); if(!canvas) return;
+    const dias=semanaGraficoHorariosVortex();
+    const pontos=pontosHorariosVortex(window.vortexDashboardPagamentos || [],dias);
+    if(graficoDiasVortex) graficoDiasVortex.destroy();
+    graficoDiasVortex=new Chart(canvas,{type:"line",data:{datasets:[dadosLinhaHorariosVortex("PIX confirmado",pontos,"#22d3ee")]},options:opcoesGraficoHorariosVortex(dias)});
+    const vazio=document.getElementById("graficoDiasVazio");
+    if(vazio) vazio.textContent=pontos.length ? "Cada ponto marca o horário de um pagamento confirmado." : "Nenhum PIX confirmado nesta semana.";
   }
 
   function renderizarFaturamentoPorDiaVortex(diaSemana = null) {
