@@ -1249,7 +1249,19 @@
     #modalStatusEquipamentosVortex::backdrop {background:rgba(1,8,20,.8);backdrop-filter:blur(5px);}
     .vortex-status-contact {display:inline-flex;padding:10px 14px;border:1px solid #24547c;border-radius:10px;color:#6acaff;text-decoration:none;align-items:center;}
     #kpiOfflineVortex:focus-visible,#kpiOnlineVortex:focus-visible {outline:2px solid #38bdf8;outline-offset:4px;}
-  </style>
+    .vortex-notif-badge{display:inline-flex;align-items:center;justify-content:center;min-width:24px;padding:2px 6px;border-radius:14px;background:#16b8ed;color:#03172b;font-size:12px;font-weight:800;}
+  .vortex-notif-badge[hidden],#btnMaisNotificacoesVortex[hidden]{display:none;}
+  .vortex-aviso{margin:14px 0;padding:18px;border:1px solid #1e4266;border-radius:14px;background:#091e36;}
+  .vortex-aviso-novo{border-left:4px solid #20c9ef;}
+  .vortex-aviso p{margin:12px 0;line-height:1.55;color:#d3e2ef;overflow-wrap:anywhere;}
+  .vortex-aviso-cabecalho{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;}
+  .vortex-aviso-cabecalho button{width:auto;}
+  .vortex-aviso-filtros{flex-wrap:wrap;margin-top:20px;}
+  .vortex-aviso-filtros button[aria-pressed="true"]{box-shadow:inset 0 0 0 2px #85ecff;}
+  #paginaNotificacoes details{margin-top:24px;}
+  #paginaNotificacoes summary{cursor:pointer;font-weight:700;padding:10px 0;}
+  .vortex-ambiente-aviso{padding:14px 16px;border:1px solid #85723a;background:#28261d;color:#f5dda0;border-radius:12px;line-height:1.5;margin-bottom:16px;}
+</style>
 </head>
 
 <body>
@@ -1469,7 +1481,7 @@ class="admin-only"
           <span class="menu-icon">⚙</span><span>Configurações</span>
         </button>
         <button data-page="Notificacoes" onclick="abrirPagina('Notificacoes')">
-          <span class="menu-icon">◌</span><span>Notificações</span>
+          <span class="menu-icon">◌</span><span>Notificações <span id="badgeNotificacoesVortex" class="vortex-notif-badge" hidden>0</span></span>
         </button>
 
         <button
@@ -2117,7 +2129,26 @@ class="admin-only"
       <div id="paginaConfiguracoes" class="paginaVortex hidden"><div class="card"><h2>Configurações</h2><p class="info">Dados financeiros e de recebimento. Seus dados de recebimento ficam vinculados à sua conta.</p><h3 class="vortex-section-title">Recebimento / PIX</h3><div class="vortex-module-box"><div class="vortex-row"><div class="vortex-field"><label>Tipo de chave PIX</label><select id="configTipoPixVortex"><option value="cpf_cnpj">CPF / CNPJ</option><option value="telefone">Telefone</option><option value="email">E-mail</option><option value="aleatoria">Chave aleatória</option></select></div><div class="vortex-field"><label>Chave PIX para repasse</label><input id="configChavePixVortex" type="text" placeholder="Informe a chave PIX"></div></div><div class="vortex-row"><div class="vortex-field"><label>Nome do titular</label><input id="configTitularPixVortex" type="text" placeholder="Nome do titular"></div><div class="vortex-field"><label>Modo padrão de cobrança</label><select id="configModoCobrancaVortex"><option value="fixo">Valor fixo</option><option value="minutos">Valor por minutos</option></select></div></div><div class="vortex-row"><div class="vortex-field"><label>Banco / instituição de recebimento</label><input id="configBancoVortex" type="text" placeholder="Ex.: PagBank"></div><div class="vortex-field"><label>Documento do titular</label><input id="configDocumentoTitularVortex" type="text" placeholder="CPF ou CNPJ"></div></div><div class="vortex-actions-wide"><button type="button" onclick="salvarConfiguracoesContaVortex()">Salvar dados de recebimento</button></div><div id="configMensagemVortex" class="message"></div></div><h3 class="vortex-section-title">Controlador</h3><div class="vortex-module-grid two"><div class="vortex-module-box"><div class="info">Atualização de firmware</div><strong>Remota / Central</strong><div class="vortex-badge pending">Aguardando controlador</div></div><div class="vortex-module-box"><div class="info">Heartbeat</div><strong>Online/offline automático</strong><div class="vortex-badge pending">Aguardando controlador</div></div></div></div></div>
 
       <!-- NOTIFICAÇÕES -->
-      <div id="paginaNotificacoes" class="paginaVortex hidden"><div class="card"><h2>Notificações</h2><p class="info">Preferências de avisos neste navegador. O envio automático depende da ativação do serviço de notificações.</p><div class="vortex-module-box"><div class="vortex-switch-line"><div><strong>PIX recebido</strong><div class="info">Avisar a cada pagamento confirmado.</div></div><input id="notifPixVortex" type="checkbox" checked></div><div class="vortex-switch-line"><div><strong>Equipamento offline</strong><div class="info">Avisar quando o controlador parar de responder.</div></div><input id="notifOfflineVortex" type="checkbox" checked></div><div class="vortex-switch-line"><div><strong>Mensalidade</strong><div class="info">Avisar quando for quitada ou ficar pendente.</div></div><input id="notifMensalidadeVortex" type="checkbox" checked></div><div class="vortex-switch-line"><div><strong>Repasse</strong><div class="info">Avisar quando o repasse for registrado/concluído.</div></div><input id="notifRepasseVortex" type="checkbox" checked></div><div class="vortex-actions-wide"><button type="button" onclick="salvarNotificacoesLocaisVortex()">Salvar preferências</button></div><div id="notifMensagemVortex" class="message"></div></div></div></div>
+      <div id="paginaNotificacoes" class="paginaVortex hidden"><div class="card">
+        <h2>Notificações</h2><p class="info">Avisos salvos na sua conta. Consulte aqui os pagamentos, mensalidades, repasses registrados e a conexão dos equipamentos.</p>
+        <div class="vortex-actions-wide vortex-aviso-filtros">
+          <button id="btnTodasNotificacoesVortex" type="button" aria-pressed="true" onclick="filtrarNotificacoesVortex(false)">Todas</button>
+          <button id="btnNovasNotificacoesVortex" type="button" aria-pressed="false" onclick="filtrarNotificacoesVortex(true)">Não lidas</button>
+          <button type="button" class="vortex-button-secondary" onclick="carregarListaNotificacoesVortex()">Atualizar</button>
+          <button type="button" class="vortex-button-secondary" onclick="marcarNotificacaoVortex(null,this)">Marcar todas como lidas</button>
+        </div>
+        <div id="listaNotificacoesMensagemVortex" class="message" role="status" aria-live="polite"></div>
+        <div id="listaNotificacoesVortex"></div>
+        <button id="btnMaisNotificacoesVortex" type="button" hidden onclick="carregarListaNotificacoesVortex(true)">Carregar mais</button>
+        <details class="vortex-module-box"><summary>Preferências de avisos</summary>
+          <div class="vortex-switch-line"><label for="notifPixVortex"><strong>PIX confirmado</strong><div class="info">Inclui a identificação dos pagamentos de teste.</div></label><input id="notifPixVortex" type="checkbox" checked></div>
+          <div class="vortex-switch-line"><label for="notifOfflineVortex"><strong>Equipamento offline</strong><div class="info">Avisar quando não houver conexão com o controlador.</div></label><input id="notifOfflineVortex" type="checkbox" checked></div>
+          <div class="vortex-switch-line"><label for="notifMensalidadeVortex"><strong>Mensalidade</strong><div class="info">Avisar sobre mensalidades pendentes ou quitadas.</div></label><input id="notifMensalidadeVortex" type="checkbox" checked></div>
+          <div class="vortex-switch-line"><label for="notifRepasseVortex"><strong>Repasse registrado</strong><div class="info">O registro no app não confirma uma transferência bancária.</div></label><input id="notifRepasseVortex" type="checkbox" checked></div>
+          <button id="btnSalvarNotificacoesVortex" type="button" onclick="salvarNotificacoesLocaisVortex()">Salvar preferências</button>
+          <div id="notifMensagemVortex" class="message" role="status" aria-live="polite"></div>
+        </details>
+      </div></div>
 
       <!-- MENSALIDADE -->
 
@@ -2471,6 +2502,7 @@ class="admin-only"
 
       });
 
+    paginaAtualVortex = pagina;
     fecharMenuMobileVortex();
 
     if (pagina === "Controladores") carregarControladoresVortex(focoControlador);
@@ -2611,6 +2643,11 @@ async function login() {
     }
 
 
+    if (cliente.ativo === false) {
+      pararNotificacoesVortex();
+      document.getElementById('loginMsg').textContent = 'Conta inativa. Entre em contato com a Central VORTEX.';
+      return;
+    }
     const primeiroAcesso = clienteLogado?.id !== cliente.id;
     clienteLogado = cliente;
     usuarioEhAdmin =
@@ -2624,7 +2661,7 @@ if (btnClientesAdmin) {
 
     document.body.classList.toggle("admin-mode", usuarioEhAdmin);
     
-    if (primeiroAcesso) abrirPagina("Inicio");
+    if (primeiroAcesso) {abrirPagina("Inicio");iniciarNotificacoesVortex();}
 
     const tipoAcessoTopo = document.getElementById("tipoAcessoTopo");
     if (tipoAcessoTopo) {
@@ -4202,7 +4239,7 @@ async function salvarConfiguracaoAdmin(equipamentoId) {
     document.getElementById("valorRepasseVortex").value = "";
     document.getElementById("descricaoRepasseVortex").value = "Repasse ao cliente";
     document.getElementById("mensagemRepasseVortex").textContent = "";
-    document.getElementById("btnConfirmarRepasseVortex").textContent = "Confirmar repasse";
+    document.getElementById("btnConfirmarRepasseVortex").textContent = "Registrar repasse";
     document.getElementById("modalRepasseVortex").style.display = "flex";
   }
 
@@ -4246,7 +4283,7 @@ async function salvarConfiguracaoAdmin(equipamentoId) {
       console.error(error);
       mensagem.textContent = "Não foi possível registrar: " + error.message;
       botao.disabled = false;
-      botao.textContent = "Confirmar repasse";
+      botao.textContent = "Registrar repasse";
       return;
     }
 
@@ -4255,10 +4292,10 @@ async function salvarConfiguracaoAdmin(equipamentoId) {
 
     const clienteIdAtual = clienteIdRegistro;
     setTimeout(async () => {
-      if (repasseClienteId !== clienteIdAtual) { botao.disabled = false; botao.textContent = "Confirmar repasse"; return; }
+      if (repasseClienteId !== clienteIdAtual) { botao.disabled = false; botao.textContent = "Registrar repasse"; return; }
       fecharModalRepasseVortex();
       botao.disabled = false;
-      botao.textContent = "Confirmar repasse";
+      botao.textContent = "Registrar repasse";
       try { await abrirClienteAdmin(clienteIdAtual); } catch (erro) { console.error(erro); }
     }, 1000);
   }
@@ -5212,7 +5249,7 @@ async function carregarFinanceiroModuloVortex() {
     alvo.textContent = "Carregando financeiro...";
     try {
       const [pagResp, repResp, mensResp, saldoResp] = await Promise.all([
-        buscarTodosVortex(() => consultaClienteVortex("pagamentos", "id,valor_bruto,comissao_vortex,valor_cliente,status,pago_em,criado_em").eq("status", "PAID")),
+        buscarTodosVortex(() => consultaClienteVortex("pagamentos", "id,valor_bruto,comissao_vortex,valor_cliente,status,pago_em,criado_em,ambiente").eq("status", "PAID")),
         buscarTodosVortex(() => consultaClienteVortex("repasses_clientes", "id,valor,status,descricao,criado_em")),
         buscarTodosVortex(() => consultaClienteVortex("mensalidades", "id,valor,status,vencimento,pago_em")),
         usuarioEhAdmin ? db.rpc("saldo_central_vortex") : db.rpc("saldo_disponivel_cliente", { p_cliente_id: clienteLogado.id })
@@ -5221,21 +5258,28 @@ async function carregarFinanceiroModuloVortex() {
       const pagamentos = pagResp.data || [];
       const repasses = repResp.data || [], mensalidades = mensResp.data || [];
       const bruto = pagamentos.reduce((t,p) => t + Number(p.valor_bruto || 0), 0);
+      const porAmbiente = {sandbox:0,producao:0,nao_identificado:0};
+      for (const p of pagamentos) porAmbiente[Object.hasOwn(porAmbiente,p.ambiente) ? p.ambiente : 'nao_identificado'] += Number(p.valor_bruto || 0);
       const comissao = pagamentos.reduce((t,p) => t + Number(p.comissao_vortex || 0), 0);
       const liquido = pagamentos.reduce((t,p) => t + Number(p.valor_cliente || 0), 0);
       const repassado = repasses.filter(r => String(r.status).toLowerCase() === "concluido").reduce((t,r) => t + Number(r.valor || 0), 0);
       const eventos = [
-        ...pagamentos.map(p => ({data: p.pago_em || p.criado_em, tipo: "PIX confirmado", status: "Pago", valor: p.valor_bruto})),
+        ...pagamentos.map(p => ({data: p.pago_em || p.criado_em, tipo: "PIX confirmado", status: nomeAmbientePagamentoVortex(p.ambiente), valor: p.valor_bruto})),
         ...repasses.map(r => ({data: r.criado_em, tipo: "Repasse registrado", status: r.status, valor: r.valor})),
         ...mensalidades.map(m => ({data: m.pago_em || m.vencimento + "T12:00:00-03:00", tipo: "Mensalidade", status: m.status, valor: m.valor}))
       ].sort((a,b) => new Date(b.data) - new Date(a.data)).slice(0,50);
       const avisos = [repResp.error && "Não foi possível carregar os repasses.", mensResp.error && "Não foi possível carregar as mensalidades.", saldoResp.error && "Saldo indisponível no momento."].filter(Boolean);
-      alvo.innerHTML = `<div class="vortex-module-grid">
+      alvo.innerHTML = `<p class="vortex-ambiente-aviso">PIX em testes. Os saldos e repasses registrados no app não comprovam recebimento ou transferência bancária.</p>
+      <div class="vortex-module-grid">
+        <div class="vortex-module-box"><div class="info">PIX de teste confirmados</div><strong>${moedaBR(porAmbiente.sandbox)}</strong></div>
+        <div class="vortex-module-box"><div class="info">PIX de produção confirmados</div><strong>${moedaBR(porAmbiente.producao)}</strong></div>
+        <div class="vortex-module-box"><div class="info">Histórico sem ambiente identificado</div><strong>${moedaBR(porAmbiente.nao_identificado)}</strong></div>
+      </div><div class="vortex-module-grid">
         <div class="vortex-module-box"><div class="info">${usuarioEhAdmin ? "Saldo atual da Central" : "Saldo disponível para repasse"}</div><strong>${saldoResp.error ? "—" : moedaBR(saldoResp.data)}</strong></div>
         <div class="vortex-module-box"><div class="info">PIX confirmados</div><strong>${moedaBR(bruto)}</strong></div>
         <div class="vortex-module-box"><div class="info">Comissão VORTEX registrada</div><strong>${moedaBR(comissao)}</strong><div class="info">2,99% nas novas vendas</div></div>
         <div class="vortex-module-box"><div class="info">Líquido dos clientes</div><strong>${moedaBR(liquido)}</strong></div>
-        <div class="vortex-module-box"><div class="info">Repasses concluídos</div><strong>${repResp.error ? "—" : moedaBR(repassado)}</strong></div>
+        <div class="vortex-module-box"><div class="info">Repasses registrados</div><strong>${repResp.error ? "—" : moedaBR(repassado)}</strong></div>
         <div class="vortex-module-box"><div class="info">Mensalidade</div><strong>${moedaBR(50)}</strong><div class="info">Cobrança conforme o saldo disponível.</div></div>
       </div>${avisos.map(a => `<div class="message vortex-status-error">${escaparHtml(a)}</div>`).join("")}
       <div class="vortex-module-box"><strong>Últimos 50 registros financeiros</strong><div class="info">Valores de cada operação. O saldo disponível considera os descontos e repasses.</div>
@@ -5380,16 +5424,164 @@ async function carregarConfiguracoesLocaisVortex() {
     } catch (erro) { console.error(erro); msg.textContent = "Não foi possível consultar seus dados de recebimento. Verifique o serviço de configurações."; }
   }
 
-  async function salvarNotificacoesLocaisVortex() {
-    const chave=await chaveLocalVortex("notificacoes");
-    const d={pix:!!document.getElementById("notifPixVortex")?.checked,offline:!!document.getElementById("notifOfflineVortex")?.checked,mensalidade:!!document.getElementById("notifMensalidadeVortex")?.checked,repasse:!!document.getElementById("notifRepasseVortex")?.checked};
-    localStorage.setItem(chave,JSON.stringify(d));
-    const msg=document.getElementById("notifMensagemVortex"); if(msg) msg.innerHTML='<span style="color:#22c55e;">✓ Preferências salvas neste navegador.</span>';
+  let paginaAtualVortex = 'Inicio';
+  let timerNotificacoesVortex = null;
+  let notificacoesGeracaoVortex = 0;
+  let notificacoesCarregandoVortex = false;
+  let notificacoesOffsetVortex = 0;
+  let notificacoesApenasNovasVortex = false;
+  let preferenciasCarregandoVortex = false;
+  let preferenciasSalvandoVortex = false;
+  const camposNotificacaoVortex = {pix:'notifPixVortex',offline:'notifOfflineVortex',mensalidade:'notifMensalidadeVortex',repasse:'notifRepasseVortex'};
+
+  function atualizarBadgeNotificacoesVortex(total) {
+    const badge = document.getElementById('badgeNotificacoesVortex');
+    if (!badge) return;
+    const quantidade = Math.max(0, Number(total) || 0);
+    badge.textContent = quantidade > 99 ? '99+' : String(quantidade);
+    badge.hidden = quantidade === 0;
+    badge.setAttribute('aria-label', `${quantidade} notificações não lidas`);
+  }
+
+  function pararNotificacoesVortex() {
+    clearTimeout(timerNotificacoesVortex);
+    timerNotificacoesVortex = null;
+    notificacoesGeracaoVortex++;
+    notificacoesCarregandoVortex = false;
+    preferenciasCarregandoVortex = false;
+    preferenciasSalvandoVortex = false;
+    notificacoesOffsetVortex = 0;
+    atualizarBadgeNotificacoesVortex(0);
+  }
+
+  function iniciarNotificacoesVortex() {
+    pararNotificacoesVortex();
+    const geracao = notificacoesGeracaoVortex;
+    async function consultar() {
+      if (geracao !== notificacoesGeracaoVortex || !clienteLogado) return;
+      if (!document.hidden) {
+        try {
+          const {data,error} = await db.rpc('listar_notificacoes_vortex', {p_limite:1,p_offset:0,p_apenas_nao_lidas:false});
+          if (geracao !== notificacoesGeracaoVortex) return;
+          if (!error) {
+            atualizarBadgeNotificacoesVortex(data?.nao_lidas);
+            if (paginaAtualVortex === 'Notificacoes' && notificacoesOffsetVortex === 0 && !notificacoesCarregandoVortex)
+              await carregarListaNotificacoesVortex(false, true);
+          }
+        } catch (_) { /* A próxima consulta tenta novamente, sem apagar os avisos. */ }
+      }
+      if (geracao === notificacoesGeracaoVortex && clienteLogado)
+        timerNotificacoesVortex = setTimeout(consultar, 30000);
+    }
+    consultar();
   }
 
   async function carregarNotificacoesLocaisVortex() {
-    const chave=await chaveLocalVortex("notificacoes");
-    try { const d=JSON.parse(localStorage.getItem(chave)||"null"); if(!d)return; document.getElementById("notifPixVortex").checked=d.pix!==false; document.getElementById("notifOfflineVortex").checked=d.offline!==false; document.getElementById("notifMensalidadeVortex").checked=d.mensalidade!==false; document.getElementById("notifRepasseVortex").checked=d.repasse!==false; } catch(e){console.error(e);}
+    notificacoesOffsetVortex = 0;
+    const geracao = notificacoesGeracaoVortex;
+    const msg = document.getElementById('notifMensagemVortex');
+    const btn = document.getElementById('btnSalvarNotificacoesVortex');
+    preferenciasCarregandoVortex = true;
+    if (btn) btn.disabled = true;
+    for (const id of Object.values(camposNotificacaoVortex)) document.getElementById(id).disabled = true;
+    msg.textContent = 'Carregando preferências da conta...';
+    try {
+      const {data,error} = await db.rpc('obter_preferencias_notificacao_vortex');
+      if (geracao !== notificacoesGeracaoVortex) return;
+      if (error || !data) throw error || new Error('Preferências indisponíveis');
+      for (const [campo,id] of Object.entries(camposNotificacaoVortex)) document.getElementById(id).checked = data[campo] === true;
+      msg.textContent = '';
+    } catch (_) {
+      if (geracao === notificacoesGeracaoVortex) msg.textContent = 'Não foi possível carregar as preferências. Abra Notificações novamente para tentar.';
+    } finally {
+      if (geracao === notificacoesGeracaoVortex) {
+        preferenciasCarregandoVortex = false;
+        // Em caso de erro, evita substituir preferências desconhecidas.
+        const carregou = msg.textContent === '';
+        if (btn) btn.disabled = !carregou;
+        for (const id of Object.values(camposNotificacaoVortex)) document.getElementById(id).disabled = !carregou;
+      }
+    }
+    if (geracao === notificacoesGeracaoVortex) await carregarListaNotificacoesVortex();
+  }
+
+  async function salvarNotificacoesLocaisVortex() {
+    const btn = document.getElementById('btnSalvarNotificacoesVortex');
+    if (preferenciasCarregandoVortex || preferenciasSalvandoVortex || btn?.disabled || !clienteLogado) return;
+    const geracao = notificacoesGeracaoVortex;
+    const msg = document.getElementById('notifMensagemVortex');
+    const preferencias = {};
+    for (const [campo,id] of Object.entries(camposNotificacaoVortex)) preferencias[campo] = !!document.getElementById(id).checked;
+    preferenciasSalvandoVortex = true;
+    if (btn) btn.disabled = true;
+    msg.textContent = 'Salvando...';
+    try {
+      const {error} = await db.rpc('salvar_preferencias_notificacao_vortex', {p_preferencias:preferencias});
+      if (geracao !== notificacoesGeracaoVortex) return;
+      if (error) throw error;
+      msg.textContent = '✓ Preferências salvas na sua conta.';
+    } catch (_) {
+      if (geracao === notificacoesGeracaoVortex) msg.textContent = 'Não foi possível salvar. Tente novamente.';
+    } finally {
+      if (geracao === notificacoesGeracaoVortex) {preferenciasSalvandoVortex = false;if (btn) btn.disabled = false;}
+    }
+  }
+
+  async function carregarListaNotificacoesVortex(mais = false, silencioso = false) {
+    if (notificacoesCarregandoVortex || !clienteLogado) return;
+    const geracao = notificacoesGeracaoVortex;
+    const alvo = document.getElementById('listaNotificacoesVortex');
+    const msg = document.getElementById('listaNotificacoesMensagemVortex');
+    const btnMais = document.getElementById('btnMaisNotificacoesVortex');
+    const offset = mais ? notificacoesOffsetVortex + 30 : 0;
+    notificacoesCarregandoVortex = true;
+    if (btnMais) btnMais.disabled = true;
+    if (!silencioso) msg.textContent = 'Carregando avisos...';
+    try {
+      const {data,error} = await db.rpc('listar_notificacoes_vortex', {p_limite:30,p_offset:offset,p_apenas_nao_lidas:notificacoesApenasNovasVortex});
+      if (geracao !== notificacoesGeracaoVortex) return;
+      if (error || !data) throw error || new Error('Avisos indisponíveis');
+      const itens = Array.isArray(data.itens) ? data.itens : [];
+      const markup = itens.map(n => `<article class="vortex-aviso ${n.lida_em ? '' : 'vortex-aviso-novo'}">
+        <div class="vortex-aviso-cabecalho"><strong>${escaparHtml(n.titulo)}</strong><span class="info">${n.lida_em ? 'Lida' : 'Nova'}</span></div>
+        <p>${escaparHtml(n.mensagem)}</p><div class="vortex-aviso-cabecalho"><time class="info">${escaparHtml(formatarDataVortex(n.criado_em))}</time>
+        ${!n.lida_em && /^[0-9a-f-]{36}$/i.test(n.id) ? `<button type="button" class="vortex-button-secondary" onclick="marcarNotificacaoVortex('${n.id}',this)">Marcar como lida</button>` : ''}</div></article>`).join('');
+      if (mais) alvo.insertAdjacentHTML('beforeend',markup); else alvo.innerHTML = markup || '<div class="message">Nenhum aviso por aqui.</div>';
+      notificacoesOffsetVortex = offset;
+      atualizarBadgeNotificacoesVortex(data.nao_lidas);
+      if (btnMais) btnMais.hidden = offset + itens.length >= Number(data.total) || offset >= 9990;
+      msg.textContent = '';
+    } catch (_) {
+      if (geracao === notificacoesGeracaoVortex) msg.textContent = 'Não foi possível consultar os avisos. Toque em Atualizar.';
+    } finally {
+      if (geracao === notificacoesGeracaoVortex) {notificacoesCarregandoVortex = false;if (btnMais) btnMais.disabled = false;}
+    }
+  }
+
+  async function marcarNotificacaoVortex(id = null, botao = null) {
+    if (!clienteLogado || botao?.disabled) return;
+    const geracao = notificacoesGeracaoVortex;
+    if (botao) botao.disabled = true;
+    try {
+      const {error} = await db.rpc('marcar_notificacao_lida_vortex',{p_id:id});
+      if (geracao !== notificacoesGeracaoVortex) return;
+      if (error) throw error;
+      await carregarListaNotificacoesVortex();
+    } catch (_) {
+      if (geracao === notificacoesGeracaoVortex) document.getElementById('listaNotificacoesMensagemVortex').textContent = 'Não foi possível marcar o aviso. Tente novamente.';
+    } finally {if (geracao === notificacoesGeracaoVortex && botao) botao.disabled = false;}
+  }
+
+  function filtrarNotificacoesVortex(apenasNovas) {
+    if (notificacoesCarregandoVortex) return;
+    notificacoesApenasNovasVortex = apenasNovas;
+    document.getElementById('btnTodasNotificacoesVortex').setAttribute('aria-pressed',String(!apenasNovas));
+    document.getElementById('btnNovasNotificacoesVortex').setAttribute('aria-pressed',String(apenasNovas));
+    carregarListaNotificacoesVortex();
+  }
+
+  function nomeAmbientePagamentoVortex(ambiente) {
+    return ambiente === 'sandbox' ? 'Teste • Sandbox' : ambiente === 'producao' ? 'Produção' : 'Histórico • ambiente não identificado';
   }
 
   /* SAIR */
@@ -5397,6 +5589,8 @@ async function carregarConfiguracoesLocaisVortex() {
   async function sair() {
 
     pararMonitorPixVortex();
+    pararNotificacoesVortex();
+    clienteLogado = null;
     await db.auth.signOut({ scope: "local" });
     location.reload();
 
@@ -5477,6 +5671,7 @@ async function carregarConfiguracoesLocaisVortex() {
     <div id="nomeClienteRepasse" style="color:#94a3b8;margin-bottom:8px;">Cliente VORTEX</div>
     <div style="color:#cbd5e1;margin-bottom:18px;">Disponível: <strong id="saldoClienteRepasse">R$ 0,00</strong></div>
 
+    <p class="vortex-ambiente-aviso">Este registro não envia dinheiro ao banco. Registre somente um repasse já realizado; durante os testes, use valores de teste.</p>
     <label for="valorRepasseVortex" style="display:block;margin-bottom:5px;color:#cbd5e1;">Valor do repasse</label>
     <input id="valorRepasseVortex" type="number" min="0.01" step="0.01" placeholder="0,00">
 
@@ -5487,7 +5682,7 @@ async function carregarConfiguracoesLocaisVortex() {
 
     <div style="display:flex;gap:10px;justify-content:flex-end;">
       <button type="button" onclick="fecharModalRepasseVortex()" style="background:#1e293b;padding:11px 16px;">Cancelar</button>
-      <button type="button" id="btnConfirmarRepasseVortex" onclick="confirmarRepasseVortex()" style="padding:11px 18px;">Confirmar repasse</button>
+      <button type="button" id="btnConfirmarRepasseVortex" onclick="confirmarRepasseVortex()" style="padding:11px 18px;">Registrar repasse</button>
     </div>
   </div>
 </div>
@@ -5637,3 +5832,4 @@ async function carregarConfiguracoesLocaisVortex() {
 </div>
 </body>
 </html>
+
