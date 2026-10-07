@@ -1782,6 +1782,11 @@ class="admin-only"
           <h2 id="detalheClienteNome">Cliente VORTEX</h2>
           <p class="info" id="detalheClienteInfo">Carregando dados do cliente...</p>
 
+          <div class="vortex-actions-wide">
+            <button type="button" onclick="abrirConfiguracoesClienteAdminVortex()">Editar cadastro e recebimento</button>
+            <button type="button" onclick="abrirNovoControladorClienteAdminVortex()">Cadastrar controlador para este cliente</button>
+          </div>
+          <div id="configuracoesClienteAdminFormularioVortex"></div>
           <div id="detalheClienteResumo" class="cliente-detalhe-grid"></div>
 
           <h3>Financeiro</h3>
@@ -1834,6 +1839,10 @@ class="admin-only"
             <div class="vortex-module-box"><div class="info">Comunicação</div><strong>Wi-Fi / Supabase</strong><div class="vortex-badge">Estrutura pronta</div></div>
             <div class="vortex-module-box"><div class="info">Telemetria</div><strong>SSID, sinal, IP, MAC e firmware</strong><div class="vortex-badge pending">Aguardando controlador</div></div>
             <div class="vortex-module-box"><div class="info">Controle</div><strong>Acionamento e sincronização</strong><div class="vortex-badge">VORTEX</div></div>
+          </div>
+          <div id="cadastroNovoControladorAdminVortex" class="hidden">
+            <button type="button" onclick="abrirNovoControladorAdminVortex()">Cadastrar novo controlador</button>
+            <div id="novoControladorFormularioVortex"></div>
           </div>
           <div id="listaControladoresVortex"><div class="message">Abra esta página para carregar os controladores.</div></div>
           <div id="detalheControladorVortex"></div>
@@ -2120,7 +2129,7 @@ class="admin-only"
           <div class="info" id="mensalidadeProxima"></div>
 
           <p class="info">
-            R$ 50,00 a cada 30 dias. Os primeiros recebimentos líquidos de cada ciclo
+            Mensalidade a cada 30 dias. Os primeiros recebimentos líquidos de cada ciclo
             são destinados à mensalidade. Depois de completá-la, o saldo fica disponível para repasse.
           </p>
 
@@ -2663,7 +2672,7 @@ if (btnClientesAdmin) {
 
     if (usuarioEhAdmin) {
       const { data: clientesAdmin, error: clientesAdminErro } =
-        await buscarTodosVortex(() => db.from("clientes").select("id,nome,telefone,mensalidade,tipo_usuario,criado_em").order("criado_em", { ascending: false }));
+        await buscarTodosVortex(() => db.from("clientes").select("id,nome,telefone,mensalidade,tipo_usuario,ativo,criado_em").order("criado_em", { ascending: false }));
 
       const listaClientesAdmin = document.getElementById("listaClientesAdmin");
       const resumoCentral = document.getElementById("resumoCentral");
@@ -2704,7 +2713,7 @@ if (btnClientesAdmin) {
               <strong>${saldoCentralErro ? "--" : moedaBR(Number(saldoCentral || 0))}</strong>
             </div>
             <div class="equipment">
-              <div class="info">Mensalidade por cliente</div>
+              <div class="info">Mensalidade padrão</div>
               <strong>${moedaBR(50)}</strong>
             </div>
           </div>
@@ -3940,6 +3949,7 @@ if (btnClientesAdmin) {
     const sessoesEl = document.getElementById("detalheClienteSessoes");
     const financeiroEl = document.getElementById("detalheClienteFinanceiro");
 
+    document.getElementById("configuracoesClienteAdminFormularioVortex").innerHTML = "";
     nomeEl.innerText = "Cliente VORTEX";
     infoEl.innerText = "Carregando dados do cliente...";
     resumoEl.innerHTML = "";
@@ -4353,6 +4363,7 @@ async function carregarControladoresVortex(focoId = null) {
     if (!lista) return;
     lista.innerHTML = '<div class="message">Carregando controladores...</div>';
     if (detalhe) detalhe.innerHTML = "";
+    document.getElementById("cadastroNovoControladorAdminVortex").classList.toggle("hidden", !usuarioEhAdmin);
     controladoresCacheVortex = [];
     dadosControladoresVortex = {};
     try {
@@ -4435,6 +4446,110 @@ async function carregarControladoresVortex(focoId = null) {
         <div id="historicoControladorVortex"></div>
       </div>`;
     detalhe.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  let novoControladorSalvandoVortex=false;
+  async function abrirNovoControladorAdminVortex(clienteId=null) {
+    if(!usuarioEhAdmin) return;
+    const alvo=document.getElementById("novoControladorFormularioVortex");
+    alvo.innerHTML='<div class="message">Carregando clientes...</div>';
+    const {data,error}=await buscarTodosVortex(()=>db.from("clientes").select("id,nome,tipo_usuario,ativo").eq("ativo",true));
+    if(error) {alvo.textContent="Não foi possível carregar os clientes. Tente novamente.";return;}
+    const clientes=(data || []).filter(c=>String(c.tipo_usuario || "cliente").toLowerCase()!=="admin");
+    alvo.innerHTML=`<h3 class="vortex-section-title">Novo controlador</h3>
+      <p class="info">Vincule o controlador ao cliente responsável. O equipamento aparecerá offline até a conexão física.</p>
+      <label for="novoControladorClienteVortex">Cliente</label><select id="novoControladorClienteVortex"><option value="">Selecione o cliente</option>${clientes.map(c=>`<option value="${c.id}" ${c.id===clienteId?'selected':''}>${escaparHtml(c.nome)}</option>`).join('')}</select>
+      <div class="vortex-module-grid two">
+       <div><label for="novoControladorCodigoVortex">Código único do equipamento</label><input id="novoControladorCodigoVortex" maxlength="60" placeholder="Ex.: VTX-000002"></div>
+       <div><label for="novoControladorNomeVortex">Nome do equipamento</label><input id="novoControladorNomeVortex" maxlength="120" placeholder="Ex.: Aspirador VORTEX 02"></div>
+       <div><label for="novoControladorPrecoVortex">Preço por minuto (R$)</label><input id="novoControladorPrecoVortex" type="number" min="0.01" max="10000" step="0.01" value="2"></div>
+       <div><label for="novoControladorTempoVortex">Minutos do pacote fixo</label><input id="novoControladorTempoVortex" type="number" min="1" max="120" step="1" value="2"></div>
+       <div><label for="novoControladorValorVortex">Valor do pacote fixo (R$)</label><input id="novoControladorValorVortex" type="number" min="0.01" max="10000" step="0.01" value="4"></div>
+       ${camposCadastroControladorVortex.map(([chave,label,max,placeholder])=>`<div><label for="novoControlador_${chave}">${label}</label><input id="novoControlador_${chave}" maxlength="${max}" placeholder="${placeholder}"></div>`).join('')}
+      </div>
+      <label for="novoControlador_observacoes">Observações</label><textarea id="novoControlador_observacoes" maxlength="2000"></textarea>
+      <button id="novoControladorSalvarVortex" type="button" onclick="cadastrarNovoControladorAdminVortex()">Cadastrar controlador</button>
+      <div id="novoControladorMensagemVortex" class="message" role="status"></div>`;
+    alvo.scrollIntoView({behavior:"smooth",block:"start"});
+  }
+  async function abrirNovoControladorClienteAdminVortex() {
+    if(!usuarioEhAdmin || !clienteAdminSelecionado) return;
+    const id=clienteAdminSelecionado;abrirPagina("Controladores");await abrirNovoControladorAdminVortex(id);
+  }
+  async function cadastrarNovoControladorAdminVortex() {
+    if(!usuarioEhAdmin || novoControladorSalvandoVortex) return;
+    const msg=document.getElementById("novoControladorMensagemVortex"),btn=document.getElementById("novoControladorSalvarVortex");
+    const valor=id=>document.getElementById(id).value.trim();
+    try {
+      const cliente=valor("novoControladorClienteVortex"),codigo=valor("novoControladorCodigoVortex"),nome=valor("novoControladorNomeVortex");
+      const preco=Number(valor("novoControladorPrecoVortex")),tempo=Number(valor("novoControladorTempoVortex")),fixo=Number(valor("novoControladorValorVortex"));
+      if(!cliente || !/^[A-Za-z0-9_-]{3,60}$/.test(codigo) || !nome) throw new Error("Selecione o cliente e informe código e nome válidos.");
+      if(!Number.isFinite(preco)||preco<0.01||preco>10000||!Number.isFinite(fixo)||fixo<0.01||fixo>10000||!Number.isInteger(tempo)||tempo<1||tempo>120) throw new Error("Informe preços válidos e tempo inteiro entre 1 e 120 minutos.");
+      const dados=Object.fromEntries([...camposCadastroControladorVortex.map(c=>c[0]),"observacoes"].map(c=>[c,valor("novoControlador_"+c)]));
+      novoControladorSalvandoVortex=true;btn.disabled=true;msg.textContent="Cadastrando...";
+      const {data,error}=await db.rpc("cadastrar_controlador_admin_vortex",{p_cliente_id:cliente,p_codigo:codigo,p_nome:nome,p_preco_minuto:preco,p_tempo_minutos:tempo,p_valor_tempo:fixo,p_dados:dados});
+      if(error) throw error;if(!data?.id) throw new Error("O servidor não confirmou o cadastro.");
+      document.getElementById("novoControladorCodigoVortex").value="";
+      msg.textContent="✓ Controlador cadastrado para o cliente selecionado.";
+      await carregarControladoresVortex(data.id);
+    } catch(erro) {msg.textContent="Não foi possível cadastrar: "+(erro.message || "Tente novamente.");}
+    finally {novoControladorSalvandoVortex=false;btn.disabled=false;}
+  }
+
+  let configuracoesClienteSalvandoVortex=false;
+  const camposClienteAdminVortex=[["nome","Nome",200],["telefone","Telefone",200],["cpf_cnpj","CPF / CNPJ",200],["endereco","Endereço",1000]];
+  const camposRecebimentoAdminVortex=[["chave_pix","Chave PIX para repasse",200],["titular","Titular",200],["banco","Banco / instituição",200],["documento_titular","Documento do titular",30]];
+  async function abrirConfiguracoesClienteAdminVortex() {
+    if(!usuarioEhAdmin || !clienteAdminSelecionado) return;
+    const id=clienteAdminSelecionado,alvo=document.getElementById("configuracoesClienteAdminFormularioVortex");
+    alvo.innerHTML='<div class="message">Carregando configurações...</div>';
+    try {
+      const {data,error}=await db.rpc("configuracoes_cliente_admin_vortex",{p_cliente_id:id});
+      if(clienteAdminSelecionado!==id)return;
+      if(error)throw error;if(!data?.cliente)throw new Error("Cadastro não encontrado.");
+      const c=data.cliente,r=data.recebimento || {};
+      const entradas=(campos,prefix,dados)=>campos.map(([key,label,max])=>`<div><label for="${prefix}${key}">${label}</label><input id="${prefix}${key}" maxlength="${max}" value="${escaparHtml(dados[key] || '')}"></div>`).join('');
+      alvo.innerHTML=`<h3 class="vortex-section-title">Configurações do cliente</h3>
+        <div class="vortex-module-grid two">${entradas(camposClienteAdminVortex,'adminCliente_',c)}
+         <div><label for="adminCliente_mensalidade">Mensalidade (R$)</label><input id="adminCliente_mensalidade" type="number" min="0.01" max="10000" step="0.01" value="${Number(c.mensalidade ?? 50)}"></div>
+         <div><label for="adminCliente_ativo">Conta ativa</label><select id="adminCliente_ativo"><option value="true" ${c.ativo?'selected':''}>Ativa</option><option value="false" ${!c.ativo?'selected':''}>Inativa</option></select></div>
+        </div><p class="info">A mensalidade alterada vale para novas cobranças. As cobranças já registradas mantêm o valor original.</p>
+        <button id="adminClienteSalvarVortex" type="button" onclick="salvarConfiguracoesClienteAdminVortex('cadastro')">Salvar cadastro</button>
+        <h3 class="vortex-section-title">Recebimento / PIX do cliente</h3>
+        <div class="vortex-module-grid two">${entradas(camposRecebimentoAdminVortex,'adminRecebimento_',r)}
+         <div><label for="adminRecebimento_tipo_chave_pix">Tipo de chave PIX</label><select id="adminRecebimento_tipo_chave_pix">${[['cpf_cnpj','CPF / CNPJ'],['telefone','Telefone'],['email','E-mail'],['aleatoria','Chave aleatória']].map(([v,l])=>`<option value="${v}" ${r.tipo_chave_pix===v?'selected':''}>${l}</option>`).join('')}</select></div>
+         <div><label for="adminRecebimento_modo_cobranca">Modo de cobrança</label><select id="adminRecebimento_modo_cobranca"><option value="fixo" ${r.modo_cobranca==='fixo'?'selected':''}>Valor fixo</option><option value="minutos" ${r.modo_cobranca==='minutos'?'selected':''}>Por minuto</option></select></div>
+        </div><button id="adminRecebimentoSalvarVortex" type="button" onclick="salvarConfiguracoesClienteAdminVortex('recebimento')">Salvar recebimento do cliente</button>
+        <div id="adminClienteMensagemVortex" class="message" role="status"></div>`;
+      alvo.scrollIntoView({behavior:"smooth",block:"start"});
+    }catch(erro){if(clienteAdminSelecionado===id)alvo.textContent="Não foi possível carregar: "+(erro.message || "Tente novamente.");}
+  }
+  async function salvarConfiguracoesClienteAdminVortex(secao) {
+    if(!usuarioEhAdmin || !clienteAdminSelecionado || configuracoesClienteSalvandoVortex)return;
+    const id=clienteAdminSelecionado,msg=document.getElementById("adminClienteMensagemVortex");
+    const botoes=[document.getElementById("adminClienteSalvarVortex"),document.getElementById("adminRecebimentoSalvarVortex")];
+    try {
+      const payload={p_cliente_id:id};
+      if(secao==='cadastro') {
+        payload.p_dados=Object.fromEntries(camposClienteAdminVortex.map(([c])=>[c,document.getElementById("adminCliente_"+c).value.trim()]));
+        payload.p_dados.mensalidade=Number(document.getElementById("adminCliente_mensalidade").value);
+        payload.p_dados.ativo=document.getElementById("adminCliente_ativo").value==='true';
+        if(!payload.p_dados.nome || !Number.isFinite(payload.p_dados.mensalidade)||payload.p_dados.mensalidade<0.01||payload.p_dados.mensalidade>10000)throw new Error("Informe nome e mensalidade válidos.");
+      }else if(secao==='recebimento') {
+        payload.p_recebimento=Object.fromEntries([...camposRecebimentoAdminVortex.map(c=>c[0]),'tipo_chave_pix','modo_cobranca'].map(c=>[c,document.getElementById("adminRecebimento_"+c).value.trim()]));
+        if(!payload.p_recebimento.chave_pix || !payload.p_recebimento.titular)throw new Error("Informe chave PIX e titular.");
+      }else return;
+      configuracoesClienteSalvandoVortex=true;botoes.forEach(b=>b.disabled=true);msg.textContent="Salvando...";
+      const {data,error}=await db.rpc("configuracoes_cliente_admin_vortex",payload);
+      if(error)throw error;if(data?.cliente?.id!==id)throw new Error("O servidor não confirmou a atualização.");
+      if(clienteAdminSelecionado!==id)return;
+      const indice=clientesAdminCacheVortex.findIndex(c=>c.id===id);
+      if(indice>=0)clientesAdminCacheVortex[indice]={...clientesAdminCacheVortex[indice],...data.cliente};
+      filtrarClientesAdminVortex();document.getElementById("detalheClienteNome").textContent=data.cliente.nome;
+      document.getElementById("detalheClienteInfo").textContent=`Telefone: ${data.cliente.telefone || '-'} • ${data.cliente.ativo?'Ativo':'Inativo'}`;
+      msg.textContent="✓ Configurações do cliente salvas.";
+    }catch(erro){if(clienteAdminSelecionado===id)msg.textContent="Não foi possível salvar: "+(erro.message || "Tente novamente.");}
+    finally{configuracoesClienteSalvandoVortex=false;botoes.forEach(b=>b.disabled=false);}
   }
 
   const camposCadastroControladorVortex = [

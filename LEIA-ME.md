@@ -43,7 +43,7 @@ O registro de repasse no banco não realiza transferência bancária. Credenciai
 
 ## Validação
 
-72 testes passaram, sem falhas ou testes ignorados, usando Node e PostgreSQL 18.3 embarcado pelo PGlite 0.5.8. Os testes de interface e PIX simulam o banco e o provedor; os testes de assinatura geram chaves ECDSA locais. O agendamento pg_cron é simulado nos testes SQL. O job real de mensalidade foi conferido com execução bem-sucedida. Concorrência entre conexões ainda precisa de teste dedicado.
+78 testes passaram, sem falhas ou testes ignorados, usando Node e PostgreSQL 18.3 embarcado pelo PGlite 0.5.8. Os testes de interface e PIX simulam o banco e o provedor; os testes de assinatura geram chaves ECDSA locais. O agendamento pg_cron é simulado nos testes SQL. O job real de mensalidade foi conferido com execução bem-sucedida. Concorrência entre conexões ainda precisa de teste dedicado.
 
 Para reproduzir em um ambiente de testes:
 
@@ -67,3 +67,7 @@ Sem PGlite, os testes SQL são explicitamente ignorados. Os testes não fazem pa
 Atualização 07/10/2026: cadastro de modelo, serial, SSID, IP, MAC, versão, URL HTTPS e SHA-256 do firmware por equipamento (09_dados_controlador.sql). Dados manuais persistem no Supabase com cadastro exclusivo da Central/ADM e leitura do proprietário; o cadastro não instala firmware. Gráficos mostram horários de pagamentos PAID em Brasília na vertical e dias da semana na horizontal; valores e minutos ficam nos detalhes dos pontos.
 
 A Central/ADM pode pesquisar os clientes cadastrados por nome ou telefone, inclusive nomes com acentos e números com formatação.
+
+A Central/ADM cadastra novos controladores vinculados a clientes ativos e edita o cadastro do cliente (nome, telefone, CPF/CNPJ, endereço, atividade e mensalidade), dados de recebimento e modo de cobrança. Preços, tempo, comandos e dados de firmware continuam acessíveis no painel do equipamento. A mensalidade personalizada vale para cobranças novas; registros anteriores são preservados.
+
+Migração `supabase/10_administracao_clientes_controladores.sql`: RPCs exclusivos do ADM para cadastro de controlador e configurações de clientes; novas cobranças usam a mensalidade cadastrada.
