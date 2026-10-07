@@ -5,7 +5,7 @@ const { test } = require('node:test');
 const html = fs.readFileSync(require('node:path').join(__dirname, '../index.html'), 'utf8');
 const script = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1]).join('\n');
 
-function ambiente({ tables = {}, rpc, invoke, auth } = {}) {
+function ambiente({ tables = {}, rpc, invoke, auth, chart } = {}) {
   const elementos = new Map(), consultas = [], chamadas = [], timers = new Map();
   let timerId = 0;
   const document = {
@@ -26,7 +26,7 @@ function ambiente({ tables = {}, rpc, invoke, auth } = {}) {
       get innerText() { return text; }, set innerText(v) { text = String(v); markup = text; },
       get innerHTML() { return markup; }, set innerHTML(v) { markup = String(v); text = markup; },
       checkValidity() { return !this.value || /.+@.+\..+/.test(this.value); },
-      addEventListener() {}, scrollIntoView() {}, appendChild(e) { this.children.push(e); }, select() {}
+      setAttribute(n,v) {this[n]=v;}, removeAttribute(n) {delete this[n];}, showModal() {this.open=true;}, close() {this.open=false;}, addEventListener() {}, scrollIntoView() {}, appendChild(e) { this.children.push(e); }, select() {}
     };
   }
   const db = {
@@ -72,7 +72,7 @@ function ambiente({ tables = {}, rpc, invoke, auth } = {}) {
     }
   };
   const context = vm.createContext({document, Intl, Date, Promise, JSON, console: {error() {}},
-    URL,
+    URL, ...(chart ? {Chart:chart}:{}),
     window: { supabase: { createClient: () => db }, addEventListener() {}, innerWidth:1200 },
     navigator: { clipboard: { writeText: async () => {} } }, localStorage: {getItem(){return null;},setItem(){}},
     location: {origin:'https://example.com',pathname:'/',reload(){}}, alert() {},
@@ -412,4 +412,62 @@ test('admin client editing saves to selected client instead of signed-in ADM acc
  a.el('adminCliente_nome').value='João';a.el('adminCliente_mensalidade').value='50';a.el('adminCliente_ativo').value='true';
  await a.run("salvarConfiguracoesClienteAdminVortex('cadastro')");assert.equal(a.chamadas.at(-1).payload.p_cliente_id,'c2');assert.equal(a.chamadas.at(-1).payload.p_dados.nome,'João');assert.match(a.el('adminClienteMensagemVortex').textContent,/salvas/);
  a.run('usuarioEhAdmin=false');await a.run("salvarConfiguracoesClienteAdminVortex('cadastro')");assert.equal(a.chamadas.length,2);
+});
+
+
+test('weekly duration chart sums purchased minutes and cents per owner equipment and leaves future days blank',()=>{
+ const a=ambiente();const dias=a.run('semanaGraficoHorariosVortex()');const hoje=a.run('chaveDataBrasilVortex(new Date())');
+ a.context.chartDias=dias;a.context.chartRows=[
+  {status:'PAID',equipamento_id:'e1',pago_em:dias[0]+'T00:01:00-03:00',minutos:60,valor_bruto:.1},
+  {status:'PAID',equipamento_id:'e1',pago_em:dias[0]+'T00:02:00-03:00',minutos:30,valor_bruto:.2},
+  {status:'PAID',equipamento_id:'e2',pago_em:dias[0]+'T00:03:00-03:00',minutos:5,valor_bruto:4},
+  {status:'WAITING',equipamento_id:'e1',pago_em:dias[0]+'T00:04:00-03:00',minutos:120,valor_bruto:100}
+ ];
+ const out=a.run("resumoTempoGraficoVortex(chartRows,chartDias,'e1')");assert.equal(out[0].minutos,90);assert.equal(out[0].pix,2);assert.equal(out[0].valor,.3);
+ for(const p of out)if(p.dia>hoje)assert.equal(p.y,null);
+ assert.equal(a.run('eixoDuracaoGraficoVortex(90)'),'01:30');assert.equal(a.run('duracaoGraficoVortex(90)'),'1h 30min');
+});
+test('chart filtering changes summary, day click selects real details, and individual PIX remains readable on touch',()=>{
+ const charts=[];function FakeChart(canvas,config){this.data=config.data;this.options=config.options;this.destroy=()=>{};charts.push(this);}
+ const a=ambiente({chart:FakeChart});const dia=a.run('semanaGraficoHorariosVortex()[0]');
+ a.context.chartRows=[{status:'PAID',equipamento_id:'e1',pago_em:dia+'T00:01:00-03:00',minutos:2,valor_bruto:5},{status:'PAID',equipamento_id:'e2',pago_em:dia+'T00:02:00-03:00',minutos:3,valor_bruto:10}];
+ a.run(`window.vortexDashboardEquipamentos=[{id:'e1',nome:'Aspirador 1'},{id:'e2',nome:'Aspirador 2'}];window.vortexDashboardPagamentos=chartRows;preencherFiltroEquipamentoGraficoVortex();renderizarGraficoEquipamentosPorDiaVortex()`);
+ assert.equal(a.el('graficoPixTotalVortex').textContent,'2');assert.equal(charts[0].data.datasets[0].data[0].minutos,5);
+ a.el('graficoFiltroEquipamentoVortex').value='e2';a.run('alterarEquipamentoGraficoVortex()');assert.equal(a.el('graficoPixTotalVortex').textContent,'1');assert.match(a.el('graficoValorTotalVortex').textContent,/10,00/);
+ const primary=charts.at(-2);primary.options.onClick(null,[{index:0}]);assert.match(a.el('graficoDiaDetalheVortex').textContent,/3 min vendidos/);
+ const horarios=charts.at(-1);assert.equal(horarios.data.datasets.length,1);assert.equal(horarios.data.datasets[0].label,'Aspirador 2');
+ horarios.options.onClick(null,[{datasetIndex:0,index:0}],horarios);assert.match(a.el('graficoPagamentoDetalheVortex').textContent,/Aspirador 2/);assert.match(a.el('graficoPagamentoDetalheVortex').textContent,/00:02/);
+});
+test('missing chart library retains financial summary and explicit unavailable message',()=>{
+ const a=ambiente();a.run('window.vortexDashboardPagamentos=[];renderizarGraficoEquipamentosPorDiaVortex()');
+ assert.equal(a.el('graficoTempoTotalVortex').textContent,'0 min');assert.match(a.el('graficoEquipamentosVazio').textContent,/Não foi possível carregar/);assert.match(a.el('graficoDiasVazio').textContent,/indisponível/);
+});
+
+
+test('admin status cards list equipment owners and contacts while clients cannot open the dialog',()=>{
+  const a=ambiente();
+  a.run(`window.vortexEquipamentosAtuais=[{id:'e1',cliente_id:'c1',codigo:'VTX1',nome:'Teste',status:'online'},{id:'e2',cliente_id:'c2',codigo:'VTX2',nome:'Outro',status:'offline'}];clientesAdminCacheVortex=[{id:'c1',nome:'Cliente A',telefone:'(15) 99999-9999'},{id:'c2',nome:'Cliente <B>',telefone:'(15) 98888-8888'}];`);
+  a.run("abrirStatusEquipamentosAdminVortex('offline')");assert.equal(a.el('modalStatusEquipamentosVortex').open,undefined);
+  a.run('usuarioEhAdmin=true;atualizarCartoesStatusAdminVortex(window.vortexEquipamentosAtuais)');
+  assert.equal(a.el('dashSessoes').innerText,'1 de 2');assert.equal(a.el('kpiOfflineVortex').role,'button');
+  a.run("abrirStatusEquipamentosAdminVortex('offline')");
+  const lista=a.el('listaStatusEquipamentosVortex').innerHTML;
+  assert.match(lista,/VTX2/);assert.doesNotMatch(lista,/VTX1/);assert.match(lista,/Cliente &lt;B&gt;/);assert.match(lista,/tel:\+5515988888888/);assert.match(lista,/Abrir cadastro do cliente/);
+  assert.equal(a.el('modalStatusEquipamentosVortex').open,true);
+  a.run("fecharStatusEquipamentosAdminVortex();abrirStatusEquipamentosAdminVortex('online')");assert.match(a.el('listaStatusEquipamentosVortex').innerHTML,/VTX1/);assert.doesNotMatch(a.el('listaStatusEquipamentosVortex').innerHTML,/VTX2/);
+  a.run('usuarioEhAdmin=false;atualizarCartoesStatusAdminVortex([])');assert.equal(a.el('tituloKpiOfflineVortex').textContent,'Sessões realizadas');assert.equal(a.el('kpiOfflineVortex').role,undefined);
+});
+test('own payer document can be loaded and saved without changing credentials or role',async()=>{
+  let enviado;
+  const a=ambiente({auth:{getUser:async()=>({data:{user:{user_metadata:{cpf_cnpj:'12345678909'}}}}),updateUser:async p=>{enviado=p;return {error:null};}}});
+  await a.run('carregarDocumentoPixContaVortex()');assert.equal(a.el('contaDocumentoPixVortex').value,'12345678909');
+  a.el('contaDocumentoPixVortex').value='123.456.789-09';await a.run('salvarDocumentoPixContaVortex()');
+  assert.deepEqual(JSON.parse(JSON.stringify(enviado)),{data:{cpf_cnpj:'12345678909'}});assert.match(a.el('contaDocumentoMensagemVortex').textContent,/Documento salvo/);
+  enviado=null;a.el('contaDocumentoPixVortex').value='1';await a.run('salvarDocumentoPixContaVortex()');assert.equal(enviado,null);
+  assert.equal(a.el('btnSalvarDocumentoPixVortex').disabled,false);
+});
+test('missing payer document provides a direct account-completion action',async()=>{
+  const a=ambiente({invoke:async()=>({error:{context:{json:async()=>({erro:'O cadastro da conta logada precisa ter nome, e-mail e CPF/CNPJ válido para gerar o PIX.'})}}})});
+  a.run('pixEquipamentosCacheVortex=[{id:"e1",preco_minuto:2,tempo_minutos:2,valor_tempo:4}]');a.el('pixEquipamentoVortex').value='e1';a.el('pixValorFixoVortex').value='4';a.el('pixMinutosFixosVortex').value='2';
+  await a.run('gerarPixRealVortex()');assert.equal(a.el('resumoPixVortex').children.at(-1).textContent,'Completar documento da conta');
 });
