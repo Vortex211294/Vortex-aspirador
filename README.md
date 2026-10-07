@@ -4,7 +4,7 @@ Painel de autoatendimento com GitHub Pages, Supabase e integração PIX PagBank 
 
 ## Estado da atualização — 07/10/2026
 
-O app é publicado pelo GitHub Pages a partir de `main`. Esta revisão adiciona cadastro do controlador/firmware e gráficos com dias na horizontal e horários de pagamentos na vertical.
+O app é publicado pelo GitHub Pages a partir de `main`. Esta revisão traz cadastro e administração de controladores/clientes e gráficos interativos: tempo vendido por dia e horários dos PIX.
 
 - Preços por equipamento: pacote fixo tem valor e duração próprios; cobrança por minutos usa preço salvo × minutos da compra. Central e proprietário ativo podem salvar a configuração. O servidor confere o preço e preserva a duração de pagamentos anteriores.
 - Mensalidade: a tela mostra primeiro a dívida vencida mais antiga; sem dívida vencida, mostra a última mensalidade paga e informa a próxima cobrança separadamente. Exibe quanto já foi descontado e quanto falta.
@@ -43,7 +43,7 @@ O registro de repasse no banco não realiza transferência bancária. Credenciai
 
 ## Validação
 
-78 testes passaram, sem falhas ou testes ignorados, usando Node e PostgreSQL 18.3 embarcado pelo PGlite 0.5.8. Os testes de interface e PIX simulam o banco e o provedor; os testes de assinatura geram chaves ECDSA locais. O agendamento pg_cron é simulado nos testes SQL. O job real de mensalidade foi conferido com execução bem-sucedida. Concorrência entre conexões ainda precisa de teste dedicado.
+84 testes passaram, sem falhas ou testes ignorados, usando Node e PostgreSQL 18.3 embarcado pelo PGlite 0.5.8. Os testes de interface e PIX simulam o banco e o provedor; os testes de assinatura geram chaves ECDSA locais. O agendamento pg_cron é simulado nos testes SQL. O job real de mensalidade foi conferido com execução bem-sucedida. Concorrência entre conexões ainda precisa de teste dedicado.
 
 Para reproduzir em um ambiente de testes:
 
@@ -71,3 +71,7 @@ A Central/ADM pode pesquisar os clientes cadastrados por nome ou telefone, inclu
 A Central/ADM cadastra novos controladores vinculados a clientes ativos e edita o cadastro do cliente (nome, telefone, CPF/CNPJ, endereço, atividade e mensalidade), dados de recebimento e modo de cobrança. Preços, tempo, comandos e dados de firmware continuam acessíveis no painel do equipamento. A mensalidade personalizada vale para cobranças novas; registros anteriores são preservados.
 
 Migração `supabase/10_administracao_clientes_controladores.sql`: RPCs exclusivos do ADM para cadastro de controlador e configurações de clientes; novas cobranças usam a mensalidade cadastrada.
+
+Gráficos: tempo comprado por dia com área em gradiente, eixo em horas:minutos, filtro por equipamento e seleção de dias. Totais de tempo, quantidade de PIX e valor recebido acompanham o filtro. O mapa de horários mostra pontos dos PIX, sem ligar eventos individuais; ao tocar é possível consultar equipamento, horário, valor e duração. Somente PAID entra nos gráficos, e dias futuros ficam sem valor. Esses gráficos não indicam tempo de motor efetivamente ligado.
+
+Na Central, os cartões online/offline abrem a lista de equipamentos com cliente responsável, telefone e acesso ao cadastro/controlador. Clientes continuam vendo suas sessões. A área Conta permite salvar o CPF/CNPJ da própria conta para criação de PIX; a ausência do documento oferece um atalho direto para completar o cadastro.

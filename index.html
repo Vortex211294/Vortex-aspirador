@@ -1208,7 +1208,48 @@
     .vortex-status-wait { color: #ffd36b; font-weight: 800; }
     .vortex-status-error { color: #ff7777; font-weight: 800; }
 
-</style>
+    /* Leitura dos gráficos no desktop e no celular */
+    .vortex-chart-panel {padding:22px;background:linear-gradient(150deg,#071d38,#041225);border-color:#173d61;border-radius:20px;box-shadow:0 12px 30px #0002;}
+    .vortex-chart-heading {display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px;}
+    .vortex-chart-kicker {font-size:10px;font-weight:700;letter-spacing:1.6px;color:#38bdf8;margin-bottom:7px;}
+    .vortex-chart-panel h3 {font-size:20px;margin:0 0 7px;letter-spacing:-.35px;}
+    .vortex-chart-subtitle {font-size:12px;color:#91a9c3;line-height:1.5;margin:0;}
+    .vortex-chart-filter {min-width:145px;max-width:210px;}
+    .vortex-chart-filter label {font-size:11px;color:#91a9c3;display:block;margin-bottom:6px;}
+    .vortex-chart-filter select {margin:0;padding:9px 10px;font-size:12px;background:#0a223e;border-color:#234869;}
+    .vortex-chart-stats {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:22px;}
+    .vortex-chart-stat {padding:12px;background:#0d29454d;border:1px solid #173d61;border-radius:12px;min-width:0;}
+    .vortex-chart-stat span {display:block;font-size:10px;letter-spacing:.5px;color:#91a9c3;margin-bottom:7px;}
+    .vortex-chart-stat strong {font-size:20px;font-weight:700;letter-spacing:-.5px;color:#ecf6ff;white-space:normal;overflow-wrap:anywhere;line-height:1.2;font-variant-numeric:tabular-nums;}
+    .vortex-chart-stat:first-child strong {color:#38bdf8;}
+    .vortex-chart-panel .chart-box {height:285px;position:relative;}
+    .vortex-chart-panel .chart-box.small {height:250px;}
+    .vortex-chart-legend {display:flex;align-items:center;gap:16px;flex-wrap:wrap;font-size:11px;color:#a8c0d8;margin:10px 0;}
+    .vortex-chart-legend span {display:inline-flex;align-items:center;gap:7px;}
+    .vortex-chart-legend i {width:8px;height:8px;border-radius:50%;display:inline-block;background:#38bdf8;}
+    .vortex-chart-panel .vortex-weekdays {border-top:1px solid #173d61;padding-top:14px;margin-top:14px;gap:6px;}
+    .vortex-chart-panel .vortex-weekdays button {border:1px solid transparent;background:#0b233d;color:#91a9c3;border-radius:10px;min-width:0;padding:9px 3px;line-height:1.45;}
+    .vortex-chart-panel .vortex-weekdays button small {display:block;font-size:10px;font-weight:400;}
+    .vortex-chart-panel .vortex-weekdays button.ativo {background:#0c365b;border-color:#38bdf8;color:#e0f2fe;box-shadow:0 0 16px #38bdf815;}
+    .vortex-chart-panel .vortex-weekdays button:focus-visible {outline:2px solid #38bdf8;outline-offset:2px;}
+    .vortex-chart-detail {border-left:2px solid #38bdf8;padding:10px 12px;margin-top:14px;background:#0d29454d;border-radius:0 8px 8px 0;color:#a8c0d8;font-size:12px;line-height:1.6;}
+    .vortex-chart-empty {font-size:12px;color:#91a9c3;line-height:1.5;margin-top:10px;}
+    @media(max-width:760px) {
+      .vortex-chart-panel {padding:16px;border-radius:16px;}
+      .vortex-chart-heading {flex-direction:column;gap:12px;}
+      .vortex-chart-filter {max-width:none;width:100%;}
+      .vortex-chart-panel h3 {font-size:19px;}
+      .vortex-chart-stats {gap:6px;margin-bottom:16px;}
+      .vortex-chart-stat {padding:10px 8px;}
+      .vortex-chart-stat strong {font-size:16px;}
+      .vortex-chart-panel .chart-box {height:240px;}
+      .vortex-chart-panel .chart-box.small {height:230px;}
+    }
+
+    #modalStatusEquipamentosVortex::backdrop {background:rgba(1,8,20,.8);backdrop-filter:blur(5px);}
+    .vortex-status-contact {display:inline-flex;padding:10px 14px;border:1px solid #24547c;border-radius:10px;color:#6acaff;text-decoration:none;align-items:center;}
+    #kpiOfflineVortex:focus-visible,#kpiOnlineVortex:focus-visible {outline:2px solid #38bdf8;outline-offset:4px;}
+  </style>
 </head>
 
 <body>
@@ -1605,7 +1646,7 @@ class="admin-only"
 
           </div>
 
-          <div class="kpi">
+          <div class="kpi" id="kpiOfflineVortex" onclick="abrirStatusEquipamentosAdminVortex('offline')" onkeydown="if(usuarioEhAdmin &amp;&amp; (event.key==='Enter' || event.key===' ')) {event.preventDefault();abrirStatusEquipamentosAdminVortex('offline');}">
 
             <div class="kpi-icon">
               ◷
@@ -1613,7 +1654,7 @@ class="admin-only"
 
             <div>
 
-              <div class="kpi-label">
+              <div class="kpi-label" id="tituloKpiOfflineVortex">
                 Sessões realizadas
               </div>
 
@@ -1624,7 +1665,7 @@ class="admin-only"
                 0
               </div>
 
-              <div class="kpi-note">
+              <div class="kpi-note" id="notaKpiOfflineVortex">
                 ● Histórico VORTEX
               </div>
 
@@ -1632,7 +1673,7 @@ class="admin-only"
 
           </div>
 
-          <div class="kpi">
+          <div class="kpi" id="kpiOnlineVortex" onclick="abrirStatusEquipamentosAdminVortex('online')" onkeydown="if(usuarioEhAdmin &amp;&amp; (event.key==='Enter' || event.key===' ')) {event.preventDefault();abrirStatusEquipamentosAdminVortex('online');}">
 
             <div class="kpi-icon">
               ▤
@@ -1651,7 +1692,7 @@ class="admin-only"
                 0 de 0
               </div>
 
-              <div class="kpi-note">
+              <div class="kpi-note" id="notaKpiOnlineVortex">
                 ● Monitoramento atual
               </div>
 
@@ -1665,31 +1706,31 @@ class="admin-only"
 
         <div class="dashboard-grid">
 
-          <section class="dash-panel">
-
-            <h3>
-              ▥ Horários dos pagamentos por equipamento
-            </h3>
-
-            <div class="chart-box">
-
-              <canvas
-                id="graficoEquipamentos"
-              ></canvas>
-
+          <section class="dash-panel vortex-chart-panel">
+            <div class="vortex-chart-heading">
+              <div><div class="vortex-chart-kicker">DESEMPENHO DA SEMANA</div><h3>Tempo vendido</h3>
+                <p class="vortex-chart-subtitle" id="graficoPeriodoVortex">Pagamentos confirmados • segunda a domingo</p></div>
+              <div class="vortex-chart-filter"><label for="graficoFiltroEquipamentoVortex">Equipamento</label>
+                <select id="graficoFiltroEquipamentoVortex" onchange="alterarEquipamentoGraficoVortex()"><option value="">Todos os equipamentos</option></select></div>
             </div>
-
+            <div class="vortex-chart-stats" aria-live="polite">
+              <div class="vortex-chart-stat"><span>TEMPO VENDIDO</span><strong id="graficoTempoTotalVortex">0 min</strong></div>
+              <div class="vortex-chart-stat"><span>PIX CONFIRMADOS</span><strong id="graficoPixTotalVortex">0</strong></div>
+              <div class="vortex-chart-stat"><span>RECEBIDO</span><strong id="graficoValorTotalVortex">R$ 0,00</strong></div>
+            </div>
+            <div class="chart-box"><canvas id="graficoEquipamentos" role="img" aria-label="Tempo vendido por dia, em horas e minutos. Os detalhes também estão nos botões dos dias."></canvas></div>
+            <div class="vortex-chart-legend"><span><i></i> Tempo comprado por dia</span><span>Eixo vertical em horas e minutos</span></div>
             <div class="vortex-weekdays" data-week-context="dashboard-equip">
-              <button type="button" onclick="filtrarDiaSemanaVortex('dashboard-equip',1,this)">Seg</button>
-              <button type="button" onclick="filtrarDiaSemanaVortex('dashboard-equip',2,this)">Ter</button>
-              <button type="button" onclick="filtrarDiaSemanaVortex('dashboard-equip',3,this)">Qua</button>
-              <button type="button" onclick="filtrarDiaSemanaVortex('dashboard-equip',4,this)">Qui</button>
-              <button type="button" onclick="filtrarDiaSemanaVortex('dashboard-equip',5,this)">Sex</button>
-              <button type="button" onclick="filtrarDiaSemanaVortex('dashboard-equip',6,this)">Sáb</button>
-              <button type="button" onclick="filtrarDiaSemanaVortex('dashboard-equip',0,this)">Dom</button>
+              <button type="button" aria-pressed="false" onclick="filtrarDiaSemanaVortex('dashboard-equip',1,this)">Seg</button>
+              <button type="button" aria-pressed="false" onclick="filtrarDiaSemanaVortex('dashboard-equip',2,this)">Ter</button>
+              <button type="button" aria-pressed="false" onclick="filtrarDiaSemanaVortex('dashboard-equip',3,this)">Qua</button>
+              <button type="button" aria-pressed="false" onclick="filtrarDiaSemanaVortex('dashboard-equip',4,this)">Qui</button>
+              <button type="button" aria-pressed="false" onclick="filtrarDiaSemanaVortex('dashboard-equip',5,this)">Sex</button>
+              <button type="button" aria-pressed="false" onclick="filtrarDiaSemanaVortex('dashboard-equip',6,this)">Sáb</button>
+              <button type="button" aria-pressed="false" onclick="filtrarDiaSemanaVortex('dashboard-equip',0,this)">Dom</button>
             </div>
-            <div class="vortex-week-caption">Seg → Dom • toque em um dia para filtrar os horários por equipamento</div><div id="graficoEquipamentosVazio" class="vortex-week-caption"></div>
-
+            <div id="graficoDiaDetalheVortex" class="vortex-chart-detail" role="status">Toque em um dia para consultar o movimento.</div>
+            <div id="graficoEquipamentosVazio" class="vortex-chart-empty"></div>
           </section>
 
           <section class="dash-panel">
@@ -1704,20 +1745,13 @@ class="admin-only"
 
           </section>
 
-          <section class="dash-panel">
-
-            <h3>
-              ↗ Horários dos pagamentos — semana atual
-            </h3>
-
-            <div class="chart-box small">
-
-              <canvas
-                id="graficoDias"
-              ></canvas><div id="graficoDiasVazio" class="vortex-week-caption"></div>
-
-            </div>
-
+          <section class="dash-panel vortex-chart-panel">
+            <div class="vortex-chart-heading"><div><div class="vortex-chart-kicker">DISTRIBUIÇÃO DOS PAGAMENTOS</div>
+              <h3>Horários dos PIX</h3><p class="vortex-chart-subtitle">Veja em quais horários houve movimento. Toque nos pontos para consultar o pagamento.</p></div></div>
+            <div class="chart-box small"><canvas id="graficoDias" role="img" aria-label="Horários dos pagamentos confirmados, por dia da semana, no horário de Brasília."></canvas></div>
+            <div id="graficoHorariosLegendaVortex" class="vortex-chart-legend"></div>
+            <div id="graficoPagamentoDetalheVortex" class="vortex-chart-detail" role="status">Cada ponto representa um PIX confirmado. O tamanho indica os minutos comprados.</div>
+            <div id="graficoDiasVazio" class="vortex-chart-empty"></div>
           </section>
 
           <section class="dash-panel">
@@ -2173,6 +2207,11 @@ class="admin-only"
           <strong id="contaTelefone">
             -
           </strong>
+          <h3 class="vortex-section-title">Dados para gerar PIX</h3>
+          <p class="info">Informe o CPF ou CNPJ desta conta. Esse documento é exigido pelo PagBank ao criar a cobrança.</p>
+          <div class="vortex-field"><label for="contaDocumentoPixVortex">CPF / CNPJ</label><input id="contaDocumentoPixVortex" type="text" inputmode="numeric" autocomplete="off" maxlength="18" placeholder="CPF ou CNPJ da conta"></div>
+          <div class="vortex-actions-wide"><button id="btnSalvarDocumentoPixVortex" type="button" onclick="salvarDocumentoPixContaVortex()">Salvar documento para PIX</button><button type="button" onclick="abrirPagina('Pix')">Ir para PIX</button></div>
+          <div id="contaDocumentoMensagemVortex" class="message" role="status"></div>
 
         </div>
 
@@ -2441,6 +2480,7 @@ class="admin-only"
     if (pagina === "Relatorios") prepararDatasRelatorioVortex();
     if (pagina === "Configuracoes") carregarConfiguracoesLocaisVortex();
     if (pagina === "Notificacoes") carregarNotificacoesLocaisVortex();
+    if (pagina === "Conta") carregarDocumentoPixContaVortex();
 
   }
 
@@ -3682,6 +3722,8 @@ if (btnClientesAdmin) {
     }
 
 
+    atualizarCartoesStatusAdminVortex(equipamentos);
+
     /* STATUS DOS EQUIPAMENTOS */
 
     if (
@@ -3871,30 +3913,47 @@ if (btnClientesAdmin) {
     }
 
 
-    /* CHART.JS */
-
-    if (
-      typeof Chart ===
-      "undefined"
-    ) {
-
-      return;
-
-    }
-
-
     /* GRÁFICO POR EQUIPAMENTO */
 
     window.vortexDashboardEquipamentos = equipamentos || [];
     window.vortexDashboardPagamentos = pagamentos || [];
+    preencherFiltroEquipamentoGraficoVortex();
     renderizarGraficoEquipamentosPorDiaVortex(
       filtroDiasAtivosVortex["dashboard-equip"] ?? null
     );
 
 
-    renderizarGraficoHorariosSemanaVortex();
   }
 
+
+  function atualizarCartoesStatusAdminVortex(equipamentos) {
+    const offline=equipamentos.filter(e=>String(e.status || "").toLowerCase()!=="online").length;
+    document.getElementById("tituloKpiOfflineVortex").textContent=usuarioEhAdmin?"Equipamentos offline":"Sessões realizadas";
+    document.getElementById("notaKpiOfflineVortex").textContent=usuarioEhAdmin?"Toque para ver equipamentos e clientes":"● Histórico VORTEX";
+    document.getElementById("notaKpiOnlineVortex").textContent=usuarioEhAdmin?"Toque para ver equipamentos e clientes":"● Monitoramento atual";
+    if(usuarioEhAdmin) document.getElementById("dashSessoes").innerText=`${offline} de ${equipamentos.length}`;
+    for(const id of ["kpiOfflineVortex","kpiOnlineVortex"]) {
+      const card=document.getElementById(id);
+      card.style.cursor=usuarioEhAdmin?"pointer":"default";
+      if(usuarioEhAdmin) {card.setAttribute("role","button");card.setAttribute("tabindex","0");}
+      else {card.removeAttribute("role");card.removeAttribute("tabindex");}
+    }
+  }
+  function abrirStatusEquipamentosAdminVortex(status) {
+    if(!usuarioEhAdmin || !["online","offline"].includes(status)) return;
+    const modal=document.getElementById("modalStatusEquipamentosVortex");
+    const equipamentos=(window.vortexEquipamentosAtuais || []).filter(e=>(String(e.status || "").toLowerCase()==="online") === (status==="online"));
+    document.getElementById("tituloStatusEquipamentosVortex").textContent=`Equipamentos ${status} • ${equipamentos.length}`;
+    document.getElementById("listaStatusEquipamentosVortex").innerHTML=equipamentos.length?equipamentos.map(e=>{
+      const cliente=clientesAdminCacheVortex.find(c=>c.id===e.cliente_id);
+      const telefone=String(cliente?.telefone || "").replace(/\D/g,"");
+      return `<div class="equipment"><strong>${escaparHtml(e.nome || "Equipamento VORTEX")}</strong><div>Código: ${escaparHtml(e.codigo || "—")}</div><div class="status-${status}">● ${status.toUpperCase()}</div><div>Cliente: ${escaparHtml(cliente?.nome || "Cadastro não disponível")}</div><div>Telefone: ${escaparHtml(cliente?.telefone || "Não cadastrado")}</div><div class="vortex-actions-wide">${telefone?`<a class="vortex-status-contact" href="tel:+${telefone.length<=11?'55':''}${telefone}">Ligar para o cliente</a>`:''}${cliente?`<button type="button" onclick="abrirClienteStatusAdminVortex('${escaparHtml(cliente.id)}')">Abrir cadastro do cliente</button>`:''}<button type="button" onclick="abrirControladorStatusAdminVortex('${escaparHtml(e.id)}')">Abrir controlador</button></div></div>`;
+    }).join(""):"<p class='info'>Nenhum equipamento neste status.</p>";
+    modal.dataset.status=status;modal.showModal();
+  }
+  function fecharStatusEquipamentosAdminVortex() {document.getElementById("modalStatusEquipamentosVortex").close();}
+  function abrirClienteStatusAdminVortex(id) {if(!usuarioEhAdmin) return;fecharStatusEquipamentosAdminVortex();abrirClienteAdmin(id);}
+  function abrirControladorStatusAdminVortex(id) {if(!usuarioEhAdmin) return;fecharStatusEquipamentosAdminVortex();abrirPagina("Controladores",id);}
 
   /* CENTRAL - DETALHE INDIVIDUAL DO CLIENTE */
 
@@ -4761,7 +4820,12 @@ async function gerarPixRealVortex() {
       else document.getElementById("pixStatusRealVortex").textContent = "Cobrança criada sem referência para acompanhamento. Consulte o histórico para confirmar.";
     } catch (erro) {
       console.error(erro);
-      resumo.textContent = "Não foi possível gerar o PIX. " + await mensagemErroPixVortex(erro);
+      const mensagem = await mensagemErroPixVortex(erro);
+      resumo.textContent = "Não foi possível gerar o PIX. " + mensagem;
+      if (/cadastro da conta logada.*CPF\/CNPJ/i.test(mensagem)) {
+        const atalho=document.createElement("button");atalho.type="button";atalho.textContent="Completar documento da conta";
+        atalho.addEventListener("click",()=>abrirPagina("Conta"));resumo.appendChild(atalho);
+      }
     } finally { botao.disabled = false; botao.textContent = "Gerar QR Code PIX"; }
   }
 
@@ -5012,54 +5076,122 @@ let pixMonitorGeracaoVortex = 0;
       }).filter(Boolean).sort((a,b) => a.instante-b.instante);
   }
 
-  function opcoesGraficoHorariosVortex(dias) {
-    const nomes = ["Seg","Ter","Qua","Qui","Sex","Sáb","Dom"];
-    return {
-      responsive:true, maintainAspectRatio:false,
-      interaction:{mode:"nearest",intersect:true},
-      plugins:{legend:{display:false},tooltip:{callbacks:{
-        title:items => { const p=items[0]?.raw; return p ? `${nomes[p.x]} ${p.dia.split("-").reverse().slice(0,2).join("/")} • ${p.hora}` : ""; },
-        label:ctx => `${ctx.dataset.label}: ${moedaBR(ctx.raw.valor)} • ${ctx.raw.minutos} min`
+  let equipamentoFiltroGraficoVortex = "";
+  const coresGraficosVortex = ["#38bdf8","#2dd4bf","#a78bfa","#fbbf24","#fb7185"];
+  function preencherFiltroEquipamentoGraficoVortex() {
+    const select=document.getElementById("graficoFiltroEquipamentoVortex");if(!select)return;
+    const equips=window.vortexDashboardEquipamentos || [];
+    if(!equips.some(e=>e.id===equipamentoFiltroGraficoVortex))equipamentoFiltroGraficoVortex="";
+    select.innerHTML='<option value="">Todos os equipamentos</option>'+equips.map(e=>`<option value="${e.id}" ${e.id===equipamentoFiltroGraficoVortex?'selected':''}>${escaparHtml(e.nome || e.codigo || 'VORTEX')}</option>`).join('');
+    select.value=equipamentoFiltroGraficoVortex;
+  }
+  function alterarEquipamentoGraficoVortex() {
+    const id=document.getElementById("graficoFiltroEquipamentoVortex").value;
+    equipamentoFiltroGraficoVortex=(window.vortexDashboardEquipamentos || []).some(e=>e.id===id)?id:"";
+    renderizarGraficoEquipamentosPorDiaVortex(filtroDiasAtivosVortex['dashboard-equip'] ?? null);
+  }
+  function duracaoGraficoVortex(minutos) {
+    const n=Math.max(0,Math.round(Number(minutos) || 0));
+    return n>=60 ? `${Math.floor(n/60)}h${n%60?' '+(n%60)+'min':''}` : `${n} min`;
+  }
+  function eixoDuracaoGraficoVortex(minutos) {
+    const n=Math.max(0,Math.round(Number(minutos) || 0));
+    return `${String(Math.floor(n/60)).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`;
+  }
+  function resumoTempoGraficoVortex(pagamentos,dias,equipamentoId=null) {
+    const hoje=chaveDataBrasilVortex(new Date());
+    const pontos=pontosHorariosVortex(pagamentos,dias,equipamentoId).filter(p=>p.instante<=Date.now());
+    return dias.map((dia,x)=>{
+      const doDia=pontos.filter(p=>p.dia===dia);
+      const minutos=doDia.reduce((n,p)=>n+Math.max(0,Number(p.minutos)||0),0);
+      return {x,y:dia>hoje?null:minutos,minutos,pix:doDia.length,
+        valor:doDia.reduce((n,p)=>n+Math.round((Number(p.valor)||0)*100),0)/100,dia,futuro:dia>hoje};
+    });
+  }
+  function tooltipGraficoVortex() {
+    return {backgroundColor:'#081a30',titleColor:'#e7f5ff',bodyColor:'#b6cde1',borderColor:'#285275',borderWidth:1,
+      padding:14,cornerRadius:10,displayColors:false,titleFont:{size:12,weight:'600'},bodyFont:{size:12},bodySpacing:6};
+  }
+  function dataCurtaGraficoVortex(dia) {return dia.split('-').reverse().slice(0,2).join('/');}
+  function selecionarDiaGraficoVortex(x) {
+    const dia=(Number(x)+1)%7;
+    const botoes=document.querySelectorAll('.vortex-weekdays[data-week-context="dashboard-equip"] button');
+    filtrarDiaSemanaVortex('dashboard-equip',dia,botoes[Number(x)]);
+  }
+  const destaqueDiaGraficoVortex={id:'vortexDia',beforeDatasetsDraw(chart) {
+    const dia=filtroDiasAtivosVortex['dashboard-equip'];if(dia==null)return;
+    const x=dia===0?6:dia-1,escala=chart.scales.x,area=chart.chartArea;if(!area||!escala)return;
+    const centro=escala.getPixelForValue(x),largura=(area.right-area.left)/6;
+    const ctx=chart.ctx;ctx.save();ctx.fillStyle='rgba(56,189,248,.055)';
+    ctx.fillRect(Math.max(area.left,centro-largura/2),area.top,Math.min(area.right,centro+largura/2)-Math.max(area.left,centro-largura/2),area.bottom-area.top);
+    ctx.restore();
+  }};
+  function renderizarGraficoEquipamentosPorDiaVortex(diaSemana=null) {
+    const canvas=document.getElementById('graficoEquipamentos');if(!canvas)return;
+    const dias=semanaGraficoHorariosVortex(),nomes=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+    const resumo=resumoTempoGraficoVortex(window.vortexDashboardPagamentos || [],dias,equipamentoFiltroGraficoVortex || null);
+    const xSelecionado=diaSemana===null?null:(diaSemana===0?6:diaSemana-1);
+    const selecionados=xSelecionado===null?resumo:[resumo[xSelecionado]];
+    document.getElementById('graficoTempoTotalVortex').textContent=duracaoGraficoVortex(selecionados.reduce((n,p)=>n+p.minutos,0));
+    document.getElementById('graficoPixTotalVortex').textContent=String(selecionados.reduce((n,p)=>n+p.pix,0));
+    document.getElementById('graficoValorTotalVortex').textContent=moedaBR(selecionados.reduce((n,p)=>n+Math.round(p.valor*100),0)/100);
+    document.getElementById('graficoPeriodoVortex').textContent=`${dataCurtaGraficoVortex(dias[0])} — ${dataCurtaGraficoVortex(dias[6])} • pagamentos confirmados`;
+    document.querySelectorAll('.vortex-weekdays[data-week-context="dashboard-equip"] button').forEach((b,i)=>{
+      const p=resumo[i];b.innerHTML=`${nomes[i]}<small>${dataCurtaGraficoVortex(p.dia)}</small>`;
+      b.classList.toggle('ativo',i===xSelecionado);b.setAttribute('aria-pressed',String(i===xSelecionado));
+      b.setAttribute('aria-label',`${nomes[i]} ${dataCurtaGraficoVortex(p.dia)}: ${p.futuro?'dia ainda não ocorreu':p.pix+' PIX, '+duracaoGraficoVortex(p.minutos)+', '+moedaBR(p.valor)}`);
+    });
+    const detalhe=document.getElementById('graficoDiaDetalheVortex');
+    if(xSelecionado===null)detalhe.textContent='Semana atual • toque em um dia para ver tempo vendido, PIX e valor recebido. Toque novamente para voltar à semana.';
+    else {const p=resumo[xSelecionado];detalhe.textContent=p.futuro?`${nomes[xSelecionado]} ${dataCurtaGraficoVortex(p.dia)} • este dia ainda não ocorreu.`:`${nomes[xSelecionado]} ${dataCurtaGraficoVortex(p.dia)} • ${duracaoGraficoVortex(p.minutos)} vendidos • ${p.pix} PIX • ${moedaBR(p.valor)} recebidos.`;}
+    const vazio=document.getElementById('graficoEquipamentosVazio');
+    if(typeof Chart==='undefined') {vazio.textContent='Não foi possível carregar o gráfico. Os totais e os detalhes dos dias continuam disponíveis.';renderizarGraficoHorariosSemanaVortex();return;}
+    const maior=Math.max(...resumo.map(p=>p.minutos));const passo=maior<=10?2:maior<=30?5:maior<=120?20:maior<=180?30:maior<=720?120:Math.ceil(maior/360)*60;
+    const options={responsive:true,maintainAspectRatio:false,animation:{duration:450},layout:{padding:{top:12,right:8}},
+      interaction:{mode:'nearest',axis:'x',intersect:false},
+      onClick:(_,elementos)=>{if(elementos.length)selecionarDiaGraficoVortex(elementos[0].index);},
+      plugins:{legend:{display:false},tooltip:{...tooltipGraficoVortex(),callbacks:{
+        title:items=>{const p=items[0]?.raw;return p?`${nomes[p.x]} • ${dataCurtaGraficoVortex(p.dia)}`:'';},
+        label:ctx=>[`Tempo vendido: ${duracaoGraficoVortex(ctx.raw.minutos)}`,`${ctx.raw.pix} PIX confirmados`,`Recebido: ${moedaBR(ctx.raw.valor)}`]
       }}},
-      scales:{
-        x:{type:"linear",min:0,max:6,title:{display:true,text:"Dias da semana",color:"#dbeafe"},
-          ticks:{stepSize:1,color:"#dbeafe",callback:v=>nomes[v] || ""},
-          grid:{display:true,drawOnChartArea:true,color:"rgba(147,197,253,.25)",lineWidth:1}},
-        y:{type:"linear",min:0,max:24,title:{display:true,text:"Horário (Brasília)",color:"#dbeafe"},
-          ticks:{stepSize:3,color:"#dbeafe",callback:v=>`${String(v).padStart(2,"0")}:00`},
-          grid:{display:true,drawOnChartArea:true,color:"rgba(147,197,253,.20)",lineWidth:1}}
-      }
-    };
+      scales:{x:{type:'linear',min:0,max:6,border:{display:false},ticks:{stepSize:1,color:'#91a9c3',font:{size:11},callback:v=>nomes[v] || '',padding:10},grid:{display:true,color:'rgba(145,169,195,.08)',drawTicks:false}},
+        y:{min:0,max:Math.max(passo*2,(Math.ceil(maior/passo)+1)*passo),border:{display:false},title:{display:true,text:'Tempo vendido (h:min)',color:'#91a9c3',font:{size:10}},
+          ticks:{stepSize:passo,color:'#91a9c3',font:{size:10},callback:eixoDuracaoGraficoVortex,padding:10},grid:{display:true,color:'rgba(145,169,195,.10)',drawTicks:false}}}};
+    const dataset={label:'Tempo vendido',data:resumo,borderColor:'#38bdf8',borderWidth:3,fill:true,clip:false,tension:.28,cubicInterpolationMode:'monotone',spanGaps:false,
+      backgroundColor:context=>{const {ctx,chartArea}=context.chart;if(!chartArea)return 'rgba(56,189,248,.12)';const g=ctx.createLinearGradient(0,chartArea.top,0,chartArea.bottom);g.addColorStop(0,'rgba(56,189,248,.28)');g.addColorStop(1,'rgba(56,189,248,.015)');return g;},
+      pointRadius:resumo.map(p=>p.x===xSelecionado?6:4),pointHoverRadius:7,pointHitRadius:16,pointBackgroundColor:'#071d38',pointBorderColor:'#38bdf8',pointBorderWidth:2};
+    if(graficoEquipamentosVortex)graficoEquipamentosVortex.destroy();
+    graficoEquipamentosVortex=new Chart(canvas,{type:'line',data:{datasets:[dataset]},options,plugins:[destaqueDiaGraficoVortex]});
+    vazio.textContent=resumo.some(p=>p.pix)?'Tempo comprado pelos pagamentos confirmados; o acionamento físico é acompanhado nas sessões.':'Ainda não houve PIX confirmado nesta semana para este filtro.';
+    renderizarGraficoHorariosSemanaVortex();
   }
-
-  function dadosLinhaHorariosVortex(label, pontos, cor) {
-    return {label,data:pontos,borderColor:cor,backgroundColor:cor,showLine:true,fill:false,
-      tension:0,pointRadius:4,pointHoverRadius:7,borderWidth:2,spanGaps:false};
+  function opcoesGraficoHorariosVortex(dias) {
+    const nomes=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+    return {responsive:true,maintainAspectRatio:false,animation:{duration:350},layout:{padding:{top:12,right:10}},
+      interaction:{mode:'nearest',intersect:false},
+      onClick:(_,elementos,chart)=>{if(!elementos.length)return;const e=elementos[0],d=chart.data.datasets[e.datasetIndex],p=d.data[e.index];
+        document.getElementById('graficoPagamentoDetalheVortex').textContent=`${d.label} • ${dataCurtaGraficoVortex(p.dia)} às ${p.hora} • ${moedaBR(p.valor)} • ${duracaoGraficoVortex(p.minutos)} comprados.`;},
+      plugins:{legend:{display:false},tooltip:{...tooltipGraficoVortex(),callbacks:{
+        title:items=>{const p=items[0]?.raw;return p?`${nomes[p.x]} ${dataCurtaGraficoVortex(p.dia)} • ${p.hora}`:'';},
+        label:ctx=>[ctx.dataset.label,`${moedaBR(ctx.raw.valor)} • ${duracaoGraficoVortex(ctx.raw.minutos)}`]
+      }}},
+      scales:{x:{type:'linear',min:0,max:6,offset:true,border:{display:false},ticks:{stepSize:1,color:'#91a9c3',font:{size:11},callback:v=>nomes[v] || '',padding:10},grid:{display:true,drawOnChartArea:true,color:'rgba(145,169,195,.10)',drawTicks:false}},
+        y:{min:0,max:24,border:{display:false},title:{display:true,text:'Horário de Brasília',color:'#91a9c3',font:{size:10}},ticks:{stepSize:4,color:'#91a9c3',font:{size:10},callback:v=>`${String(v).padStart(2,'0')}:00`,padding:10},grid:{display:true,color:'rgba(145,169,195,.10)',drawTicks:false}}}};
   }
-
-  function renderizarGraficoEquipamentosPorDiaVortex(diaSemana = null) {
-    if (typeof Chart === "undefined") return;
-    const canvas=document.getElementById("graficoEquipamentos"); if(!canvas) return;
-    const equipamentos=window.vortexDashboardEquipamentos || window.vortexEquipamentosAtuais || [];
-    const pagamentos=window.vortexDashboardPagamentos || window.vortexPagamentosAtuais || [];
-    const dias=semanaGraficoHorariosVortex(), cores=["#22a6ff","#22d3ee","#a78bfa","#4ade80","#fbbf24"];
-    const datasets=equipamentos.map((e,i)=>dadosLinhaHorariosVortex(e.nome || e.codigo || "VORTEX",
-      pontosHorariosVortex(pagamentos,dias,e.id,diaSemana),cores[i%cores.length]));
-    if(graficoEquipamentosVortex) graficoEquipamentosVortex.destroy();
-    graficoEquipamentosVortex=new Chart(canvas,{type:"line",data:{datasets},options:opcoesGraficoHorariosVortex(dias)});
-    const vazio=document.getElementById("graficoEquipamentosVazio");
-    if(vazio) vazio.textContent=datasets.some(d=>d.data.length) ? "Cada ponto é um PIX confirmado. Toque para ver valor e duração." : "Nenhum PIX confirmado nesta semana ou no dia selecionado.";
-  }
-
   function renderizarGraficoHorariosSemanaVortex() {
-    if(typeof Chart === "undefined") return;
-    const canvas=document.getElementById("graficoDias"); if(!canvas) return;
-    const dias=semanaGraficoHorariosVortex();
-    const pontos=pontosHorariosVortex(window.vortexDashboardPagamentos || [],dias);
-    if(graficoDiasVortex) graficoDiasVortex.destroy();
-    graficoDiasVortex=new Chart(canvas,{type:"line",data:{datasets:[dadosLinhaHorariosVortex("PIX confirmado",pontos,"#22d3ee")]},options:opcoesGraficoHorariosVortex(dias)});
-    const vazio=document.getElementById("graficoDiasVazio");
-    if(vazio) vazio.textContent=pontos.length ? "Cada ponto marca o horário de um pagamento confirmado." : "Nenhum PIX confirmado nesta semana.";
+    const canvas=document.getElementById('graficoDias');if(!canvas)return;
+    const vazio=document.getElementById('graficoDiasVazio');
+    if(typeof Chart==='undefined'){vazio.textContent='Gráfico de horários indisponível. Atualize a página para tentar novamente.';return;}
+    const dias=semanaGraficoHorariosVortex(),equips=window.vortexDashboardEquipamentos || [],pags=window.vortexDashboardPagamentos || [];
+    const pontos=pontosHorariosVortex(pags,dias,equipamentoFiltroGraficoVortex || null,filtroDiasAtivosVortex['dashboard-equip'] ?? null).filter(p=>p.instante<=Date.now());
+    const ids=[...new Set(pontos.map(p=>p.equipamento_id))];
+    const datasets=ids.map((id,i)=>{const indice=equips.findIndex(e=>e.id===id),cor=coresGraficosVortex[(indice<0?equips.length+i:indice)%coresGraficosVortex.length],e=equips.find(e=>e.id===id);return {label:e?.nome || e?.codigo || 'Equipamento',
+      data:pontos.filter(p=>p.equipamento_id===id).map(p=>({...p,r:Math.min(11,5+Math.sqrt(Math.max(0,p.minutos)))})),backgroundColor:cor+'99',borderColor:cor,borderWidth:1.5,hoverBorderWidth:2,hoverRadius:3,hitRadius:10};});
+    document.getElementById('graficoHorariosLegendaVortex').innerHTML=datasets.map((d,i)=>`<span><i style="background:${d.borderColor}"></i>${escaparHtml(d.label)}</span>`).join('');
+    document.getElementById('graficoPagamentoDetalheVortex').textContent='Cada ponto representa um PIX confirmado. Toque para ver equipamento, horário, valor e minutos.';
+    if(graficoDiasVortex)graficoDiasVortex.destroy();
+    graficoDiasVortex=new Chart(canvas,{type:'bubble',data:{datasets},options:opcoesGraficoHorariosVortex(dias),plugins:[destaqueDiaGraficoVortex]});
+    vazio.textContent=pontos.length?'':'Nenhum PIX confirmado no período ou equipamento selecionado.';
   }
 
   function renderizarFaturamentoPorDiaVortex(diaSemana = null) {
@@ -5179,6 +5311,29 @@ async function gerarRelatorioVortex() {
   async function chaveLocalVortex(sufixo) {
     const { data } = await db.auth.getUser();
     return `vortex_${sufixo}_${data?.user?.id || "anon"}`;
+  }
+
+  async function carregarDocumentoPixContaVortex() {
+    const msg=document.getElementById("contaDocumentoMensagemVortex");
+    try {
+      const {data,error}=await db.auth.getUser();
+      if(error || !data?.user) throw new Error("Sessão inválida. Entre novamente.");
+      document.getElementById("contaDocumentoPixVortex").value=data.user.user_metadata?.cpf_cnpj || "";
+      msg.textContent="";
+    } catch(erro) {msg.textContent=erro.message || "Não foi possível carregar o documento.";}
+  }
+  async function salvarDocumentoPixContaVortex() {
+    const msg=document.getElementById("contaDocumentoMensagemVortex"),botao=document.getElementById("btnSalvarDocumentoPixVortex");
+    if(botao.disabled) return;
+    const documento=document.getElementById("contaDocumentoPixVortex").value.replace(/\D/g,"");
+    if(!/^(\d{11}|\d{14})$/.test(documento) || /^(\d)\1+$/.test(documento)) {msg.textContent="Informe um CPF com 11 dígitos ou CNPJ com 14 dígitos.";return;}
+    botao.disabled=true;msg.textContent="Salvando documento...";
+    try {
+      const {error}=await db.auth.updateUser({data:{cpf_cnpj:documento}});
+      if(error) throw error;
+      msg.textContent="✓ Documento salvo. Volte para PIX e gere uma nova cobrança.";
+    } catch(erro) {msg.textContent="Não foi possível salvar o documento. "+(erro.message || "Tente novamente.");}
+    finally {botao.disabled=false;}
   }
 
   let recebimentoSalvandoVortex = false;
@@ -5310,6 +5465,11 @@ async function carregarConfiguracoesLocaisVortex() {
   }
 
 </script>
+<dialog id="modalStatusEquipamentosVortex" aria-labelledby="tituloStatusEquipamentosVortex" style="background:#071a30;color:#e2e8f0;border:1px solid #24547c;border-radius:20px;width:calc(100% - 32px);max-width:760px;max-height:85vh;padding:24px;margin:auto;">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;"><h2 id="tituloStatusEquipamentosVortex">Equipamentos</h2><button type="button" onclick="fecharStatusEquipamentosAdminVortex()" aria-label="Fechar lista de equipamentos">Fechar</button></div>
+  <p class="info" style="margin-bottom:16px;">Status informado pelo controlador. Escolha um equipamento para consultar o cliente responsável.</p>
+  <div id="listaStatusEquipamentosVortex"></div>
+</dialog>
 <!-- MODAL REPASSE VORTEX -->
 <div id="modalRepasseVortex" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:99999;align-items:center;justify-content:center;padding:20px;">
   <div style="width:100%;max-width:430px;background:#07111f;border:1px solid #1e3a5f;border-radius:16px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.55);">
